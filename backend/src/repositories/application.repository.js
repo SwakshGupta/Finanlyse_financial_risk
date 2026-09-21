@@ -160,13 +160,50 @@ class ApplicationRepository {
 
   async findByUserId(userId) {
     const query = `
-      SELECT id, user_id, status, created_at, updated_at
-      FROM applications
-      WHERE user_id = $1
-      ORDER BY created_at DESC;
+      SELECT a.id, a.user_id, a.status, a.created_at, a.updated_at,
+             p.full_name, p.phone, p.employment_type
+      FROM applications a
+      LEFT JOIN applicant_profiles p ON a.id = p.application_id
+      WHERE a.user_id = $1
+      ORDER BY a.created_at DESC;
     `;
     const result = await db.query(query, [userId]);
-    return result.rows;
+    return result.rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      status: row.status,
+      applicant: {
+        fullName: row.full_name,
+        phone: row.phone,
+        employmentType: row.employment_type
+      },
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+  }
+
+  async findAll(limit = 50) {
+    const query = `
+      SELECT a.id, a.user_id, a.status, a.created_at, a.updated_at,
+             p.full_name, p.phone, p.employment_type
+      FROM applications a
+      LEFT JOIN applicant_profiles p ON a.id = p.application_id
+      ORDER BY a.created_at DESC
+      LIMIT $1;
+    `;
+    const result = await db.query(query, [limit]);
+    return result.rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      status: row.status,
+      applicant: {
+        fullName: row.full_name,
+        phone: row.phone,
+        employmentType: row.employment_type
+      },
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
   }
 }
 

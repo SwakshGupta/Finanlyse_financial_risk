@@ -13,6 +13,9 @@ const applicationIdParamCheck = param('applicationId')
   .matches(/^app_[A-Za-z0-9_-]{8,64}$/)
   .withMessage('applicationId must match pattern ^app_[A-Za-z0-9_-]{8,64}$');
 
+// GET /api/v1/applications - List applications (user's applications or all if analyst)
+router.get('/', applicationController.listApplications);
+
 // POST /api/v1/applications - Create application
 router.post(
   '/',

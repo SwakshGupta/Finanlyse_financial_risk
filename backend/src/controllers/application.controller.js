@@ -11,6 +11,15 @@ class ApplicationController {
     }
   }
 
+  async listApplications(req, res, next) {
+    try {
+      const applications = await applicationService.listApplications(req.user);
+      return res.status(200).json(applications);
+    } catch (err) {
+      return next(err);
+    }
+  }
+
   async getApplication(req, res, next) {
     try {
       const { applicationId } = req.params;

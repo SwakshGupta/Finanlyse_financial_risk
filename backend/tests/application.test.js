@@ -145,6 +145,29 @@ describe('Financial Data Ingestion & Applications API (/api/v1/applications)', (
       expect(response.status).toBe(404);
       expect(response.body.error.code).toBe('NOT_FOUND');
     });
+
+    it('should list applications for the authenticated applicant (GET /)', async () => {
+      const response = await request(app)
+        .get('/api/v1/applications')
+        .set('Authorization', `Bearer ${applicantToken1}`);
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThan(0);
+      expect(response.body[0]).toHaveProperty('id');
+      expect(response.body[0]).toHaveProperty('status');
+      expect(response.body[0]).toHaveProperty('applicant');
+    });
+
+    it('should list all applications for an analyst (GET /)', async () => {
+      const response = await request(app)
+        .get('/api/v1/applications')
+        .set('Authorization', `Bearer ${analystToken}`);
+
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThan(0);
+    });
   });
 
   describe('Financial Data Ingestion & Summary Pipeline', () => {

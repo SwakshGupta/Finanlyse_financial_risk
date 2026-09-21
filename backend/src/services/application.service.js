@@ -69,6 +69,13 @@ class ApplicationService {
   async getUserApplications(userId) {
     return applicationRepository.findByUserId(userId);
   }
+
+  async listApplications(user) {
+    if (user.role === 'ANALYST' || user.role === 'ADMIN') {
+      return applicationRepository.findAll();
+    }
+    return applicationRepository.findByUserId(user.id);
+  }
 }
 
 module.exports = new ApplicationService();

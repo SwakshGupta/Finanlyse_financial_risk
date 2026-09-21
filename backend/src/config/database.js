@@ -26,6 +26,11 @@ function getPoolConfig() {
 
 function getPool() {
   if (!pool) {
+    if (process.env.USE_MOCK_DB === 'true') {
+      const mockDb = require('../../tests/mockDb');
+      pool = mockDb;
+      return pool;
+    }
     pool = new Pool(getPoolConfig());
     pool.on('error', (err) => {
       console.error('[Database Pool Error]:', err.message);

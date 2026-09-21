@@ -159,6 +159,45 @@ async function handleQuery(text, params = []) {
     return { rows: [] };
   }
 
+  if (trimmed.includes('FROM applications a') && trimmed.includes('WHERE a.user_id = $1')) {
+    const userId = params[0];
+    const apps = Array.from(applicationsStore.values()).filter(a => a.user_id === userId);
+    return {
+      rows: apps.map(app => {
+        const prof = applicantProfilesStore.get(app.id) || {};
+        return {
+          id: app.id,
+          user_id: app.user_id,
+          status: app.status,
+          created_at: app.created_at,
+          updated_at: app.updated_at,
+          full_name: prof.full_name,
+          phone: prof.phone,
+          employment_type: prof.employment_type
+        };
+      })
+    };
+  }
+
+  if (trimmed.includes('FROM applications a') && !trimmed.includes('WHERE a.id = $1') && !trimmed.includes('WHERE a.user_id = $1')) {
+    const apps = Array.from(applicationsStore.values());
+    return {
+      rows: apps.map(app => {
+        const prof = applicantProfilesStore.get(app.id) || {};
+        return {
+          id: app.id,
+          user_id: app.user_id,
+          status: app.status,
+          created_at: app.created_at,
+          updated_at: app.updated_at,
+          full_name: prof.full_name,
+          phone: prof.phone,
+          employment_type: prof.employment_type
+        };
+      })
+    };
+  }
+
   if (trimmed.includes('FROM applications') && trimmed.includes('WHERE user_id = $1')) {
     const userId = params[0];
     const apps = Array.from(applicationsStore.values()).filter(a => a.user_id === userId);
