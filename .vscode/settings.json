@@ -1,0 +1,9 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/ml-service/.venv/bin/python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/ml-service"
+  ],
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/ml-service"
+  ]
+}

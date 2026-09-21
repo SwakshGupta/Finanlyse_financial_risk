@@ -1,0 +1,14 @@
+[tool.pyrefly]
+search-paths = [
+  "ml-service",
+  "ml-service/.venv/lib/python3.13/site-packages"
+]
+
+[tool.pyright]
+venvPath = "ml-service"
+venv = ".venv"
+extraPaths = ["ml-service"]
+
+[tool.pytest.ini_options]
+pythonpath = ["ml-service"]
+testpaths = ["ml-service/tests"]

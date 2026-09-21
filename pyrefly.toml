@@ -1,0 +1,5 @@
+[tool.pyrefly]
+search-paths = [
+  "ml-service",
+  "ml-service/.venv/lib/python3.13/site-packages"
+]
