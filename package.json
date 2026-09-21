@@ -1,0 +1,28 @@
+{
+  "name": "finalyse-dynamic-risk-assessment",
+  "version": "0.1.0",
+  "description": "AI-Powered Financial Inclusion: Dynamic Risk Assessment for Underserved Segments",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "test:backend": "npm --prefix backend test",
+    "test:ml": "pytest ml-service/tests",
+    "test": "npm run test:backend"
+  },
+  "keywords": [
+    "financial-inclusion",
+    "risk-assessment",
+    "machine-learning",
+    "explainable-ai",
+    "gemini",
+    "fastapi",
+    "express"
+  ],
+  "author": "",
+  "license": "UNLICENSED"
+}

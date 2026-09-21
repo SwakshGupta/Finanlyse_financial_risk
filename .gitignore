@@ -1,0 +1,93 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+*.dmg
+*.pkg
+
+
+# Environment and Secrets (CRITICAL: Never commit real secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.cert
+*.crt
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+dist/
+build/
+.next/
+out/
+.turbo/
+.npm/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDE and Editors
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and runtime artifacts
+logs/
+*.log
+npm-debug.log*
+
+# Local uploads and temporary storage
+backend/uploads/*
+!backend/uploads/.gitkeep
+tmp/
+scratch/
+
+# Trained model artifacts / large files (committed models will use versioned paths)
+ml-service/artifacts/*.joblib
+ml-service/artifacts/*.pkl
+!ml-service/artifacts/.gitkeep

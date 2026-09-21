@@ -1,0 +1,1436 @@
+openapi: 3.0.3
+info:
+  title: AI-Powered Financial Inclusion Platform API
+  version: 1.0.0
+  description: |
+    REST API for the Dynamic Risk Assessment platform.
+
+    The public API is implemented by the Node.js/Express backend. The backend
+    orchestrates application management, financial data ingestion, feature
+    engineering, risk assessment, and LLM-based explainability.
+
+    The ML service is an internal FastAPI service and is documented in the same
+    OpenAPI document under the /internal/v1 namespace for completeness.
+
+    The LLM provider is intentionally NOT exposed as a public REST endpoint.
+    Gemini is accessed through a provider-agnostic server-side orchestration
+    layer. The LLM may explain model output but must not modify authoritative
+    numerical risk results.
+servers:
+  - url: http://localhost:4000
+    description: Local Node/Express API
+  - url: https://api.example.com
+    description: Production API placeholder
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Applications
+  - name: Financial Data
+  - name: Documents
+  - name: Risk Assessment
+  - name: Explainability
+  - name: What-if Analysis
+  - name: ML Service
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Service health check
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: UP
+                service: risk-assessment-api
+                timestamp: '2026-09-21T12:30:00Z'
+
+  /ready:
+    get:
+      tags: [Health]
+      summary: Service readiness check
+      operationId: getReadiness
+      security: []
+      responses:
+        '200':
+          description: Service and required dependencies are ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a user
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate a user
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh an access token
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/applications:
+    post:
+      tags: [Applications]
+      summary: Create a risk assessment application
+      operationId: createApplication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationRequest'
+      responses:
+        '201':
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/applications/{applicationId}:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    get:
+      tags: [Applications]
+      summary: Get an application
+      operationId: getApplication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Application details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ApplicationNotFound'
+    put:
+      tags: [Applications]
+      summary: Update an application before assessment
+      operationId: updateApplication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicationRequest'
+      responses:
+        '200':
+          description: Application updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ApplicationNotFound'
+        '409':
+          description: Application cannot be updated in its current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/applications/{applicationId}/financial-profile:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    post:
+      tags: [Financial Data]
+      summary: Add or replace the normalized financial profile
+      operationId: upsertFinancialProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialProfileInput'
+      responses:
+        '200':
+          description: Financial profile stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialProfileResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ApplicationNotFound'
+
+  /api/v1/applications/{applicationId}/transactions:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    post:
+      tags: [Financial Data]
+      summary: Add normalized transaction data
+      operationId: addTransactions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionBatchRequest'
+      responses:
+        '201':
+          description: Transactions accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionBatchResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ApplicationNotFound'
+
+  /api/v1/applications/{applicationId}/financial-summary:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    get:
+      tags: [Financial Data]
+      summary: Get derived financial summary
+      operationId: getFinancialSummary
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Financial summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialSummaryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ApplicationNotFound'
+
+  /api/v1/applications/{applicationId}/documents:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    post:
+      tags: [Documents]
+      summary: Upload a financial document
+      operationId: uploadDocument
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUploadRequest'
+      responses:
+        '201':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ApplicationNotFound'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/applications/{applicationId}/assess:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    post:
+      tags: [Risk Assessment]
+      summary: Run a risk assessment
+      operationId: assessApplication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentRequest'
+      responses:
+        '200':
+          description: Risk assessment completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAssessmentResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ApplicationNotFound'
+        '422':
+          description: Insufficient or invalid data to assess
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/MLUnavailable'
+
+  /api/v1/applications/{applicationId}/assessment:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    get:
+      tags: [Risk Assessment]
+      summary: Get the latest risk assessment
+      operationId: getAssessment
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Latest risk assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAssessmentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Application or assessment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/applications/{applicationId}/explanation:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    get:
+      tags: [Explainability]
+      summary: Get the latest explanation
+      operationId: getExplanation
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Explanation for the latest assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExplanationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Explanation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Explainability]
+      summary: Generate or regenerate an explanation
+      operationId: generateExplanation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExplanationRequest'
+      responses:
+        '200':
+          description: Explanation generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExplanationResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Assessment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: LLM unavailable and fallback could not be generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/applications/{applicationId}/what-if:
+    parameters:
+      - $ref: '#/components/parameters/ApplicationId'
+    post:
+      tags: [What-if Analysis]
+      summary: Run a what-if risk scenario
+      operationId: runWhatIf
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatIfRequest'
+      responses:
+        '200':
+          description: Scenario assessment completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhatIfResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/ApplicationNotFound'
+        '422':
+          description: Invalid scenario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/MLUnavailable'
+
+  /internal/v1/predict:
+    post:
+      tags: [ML Service]
+      summary: Generate an ML risk prediction
+      operationId: predictRisk
+      servers:
+        - url: http://localhost:8000
+          description: Local FastAPI ML service
+        - url: https://ml.internal.example.com
+          description: Production private ML service placeholder
+      security:
+        - serviceBearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MLPredictionRequest'
+      responses:
+        '200':
+          description: Prediction generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MLPredictionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: ML feature validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Model inference error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /internal/v1/model:
+    get:
+      tags: [ML Service]
+      summary: Get active model metadata
+      operationId: getActiveModel
+      servers:
+        - url: http://localhost:8000
+          description: Local FastAPI ML service
+        - url: https://ml.internal.example.com
+          description: Production private ML service placeholder
+      security:
+        - serviceBearerAuth: []
+      responses:
+        '200':
+          description: Active model metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelMetadata'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /internal/v1/health:
+    get:
+      tags: [ML Service]
+      summary: ML service health check
+      operationId: getMLHealth
+      servers:
+        - url: http://localhost:8000
+          description: Local FastAPI ML service
+      security: []
+      responses:
+        '200':
+          description: ML service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /internal/v1/ready:
+    get:
+      tags: [ML Service]
+      summary: ML service readiness check
+      operationId: getMLReadiness
+      servers:
+        - url: http://localhost:8000
+          description: Local FastAPI ML service
+      security: []
+      responses:
+        '200':
+          description: ML service is ready and model artifact is loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: End-user access token.
+    serviceBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Internal service-to-service token. In production, use stronger workload identity/mTLS where appropriate.
+
+  parameters:
+    ApplicationId:
+      name: applicationId
+      in: path
+      required: true
+      description: Unique risk assessment application identifier.
+      schema:
+        type: string
+        pattern: '^app_[A-Za-z0-9_-]{8,64}$'
+      example: app_7dGk92Lm1Q
+
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Request validation failed
+              requestId: req_01JXYZ123
+              details:
+                - field: monthlyIncome
+                  issue: must be greater than 0
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Authenticated principal is not allowed to access the resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ApplicationNotFound:
+      description: Application not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    MLUnavailable:
+      description: ML inference service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Service not ready
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, service, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [UP]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ReadinessResponse:
+      type: object
+      required: [status, checks, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [READY, NOT_READY]
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [UP, DOWN]
+          example:
+            database: UP
+            mlService: UP
+            storage: UP
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  issue:
+                    type: string
+
+    User:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+          example: usr_12345678
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [APPLICANT, ANALYST, ADMIN]
+
+    RegisterRequest:
+      type: object
+      required: [email, password, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+        role:
+          type: string
+          enum: [APPLICANT, ANALYST]
+          default: APPLICANT
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          minLength: 20
+
+    AuthResponse:
+      type: object
+      required: [user, accessToken, refreshToken, tokenType, expiresIn]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          enum: [Bearer]
+        expiresIn:
+          type: integer
+          format: int64
+          description: Access-token lifetime in seconds.
+
+    TokenResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          enum: [Bearer]
+        expiresIn:
+          type: integer
+          format: int64
+
+    ConsentRecord:
+      type: object
+      required: [purpose, granted, version]
+      properties:
+        purpose:
+          type: string
+          enum: [UNDERWRITING, EXPLANATION]
+        granted:
+          type: boolean
+        version:
+          type: string
+        dataSources:
+          type: array
+          items:
+            type: string
+            enum: [MANUAL_INPUT, SYNTHETIC, UPLOADED_STATEMENT, ACCOUNT_AGGREGATOR, BUREAU]
+        grantedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    ApplicantProfile:
+      type: object
+      required: [fullName]
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 20
+        employmentType:
+          type: string
+          enum: [SALARIED, SELF_EMPLOYED, CONTRACT, STUDENT, OTHER]
+        employmentTenureMonths:
+          type: integer
+          minimum: 0
+          maximum: 720
+
+    CreateApplicationRequest:
+      type: object
+      required: [applicant, consent]
+      properties:
+        applicant:
+          $ref: '#/components/schemas/ApplicantProfile'
+        consent:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ConsentRecord'
+        dataSource:
+          type: string
+          enum: [MANUAL_INPUT, SYNTHETIC, UPLOADED_STATEMENT, ACCOUNT_AGGREGATOR, BUREAU]
+          default: MANUAL_INPUT
+
+    UpdateApplicationRequest:
+      type: object
+      properties:
+        applicant:
+          $ref: '#/components/schemas/ApplicantProfile'
+        status:
+          type: string
+          enum: [DRAFT, READY_FOR_ASSESSMENT]
+
+    ApplicationResponse:
+      type: object
+      required: [id, status, applicant, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, READY_FOR_ASSESSMENT, ASSESSING, ASSESSED, FAILED]
+        applicant:
+          $ref: '#/components/schemas/ApplicantProfile'
+        dataSources:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FinancialProfileInput:
+      type: object
+      required: [monthlyIncome, monthlyExpenses, monthlyEmi, averageBalance]
+      properties:
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          default: INR
+        monthlyIncome:
+          type: number
+          format: double
+          minimum: 0
+        monthlyExpenses:
+          type: number
+          format: double
+          minimum: 0
+        monthlyEmi:
+          type: number
+          format: double
+          minimum: 0
+        averageBalance:
+          type: number
+          format: double
+        incomeVolatility:
+          type: number
+          minimum: 0
+          description: Normalized volatility metric prepared by the client or derived later.
+        expenseVolatility:
+          type: number
+          minimum: 0
+        transactionRegularity:
+          type: number
+          minimum: 0
+          maximum: 1
+        savingsRate:
+          type: number
+          minimum: -10
+          maximum: 1
+        failedPaymentCount:
+          type: integer
+          minimum: 0
+        recurringObligationAmount:
+          type: number
+          format: double
+          minimum: 0
+        existingDebtAmount:
+          type: number
+          format: double
+          minimum: 0
+        observationMonths:
+          type: integer
+          minimum: 1
+          maximum: 60
+
+    FinancialProfileResponse:
+      type: object
+      required: [applicationId, profile]
+      properties:
+        applicationId:
+          type: string
+        profile:
+          $ref: '#/components/schemas/FinancialProfileInput'
+        updatedAt:
+          type: string
+          format: date-time
+
+    Transaction:
+      type: object
+      required: [transactionDate, amount, direction, category]
+      properties:
+        transactionDate:
+          type: string
+          format: date
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+        direction:
+          type: string
+          enum: [CREDIT, DEBIT]
+        category:
+          type: string
+          enum: [SALARY, RENT, GROCERIES, UTILITIES, EMI, LOAN_PAYMENT, SHOPPING, FOOD, TRANSPORT, HEALTH, EDUCATION, TRANSFER, SAVINGS, REFUND, OTHER]
+        channel:
+          type: string
+          enum: [UPI, CARD, CASH, CHEQUE, NETBANKING, AUTO_DEBIT, OTHER]
+        merchant:
+          type: string
+          maxLength: 160
+        reference:
+          type: string
+          maxLength: 100
+
+    TransactionBatchRequest:
+      type: object
+      required: [transactions]
+      properties:
+        source:
+          type: string
+          enum: [MANUAL_INPUT, SYNTHETIC, UPLOADED_STATEMENT, ACCOUNT_AGGREGATOR]
+        transactions:
+          type: array
+          minItems: 1
+          maxItems: 10000
+          items:
+            $ref: '#/components/schemas/Transaction'
+
+    TransactionBatchResponse:
+      type: object
+      required: [applicationId, acceptedCount]
+      properties:
+        applicationId:
+          type: string
+        acceptedCount:
+          type: integer
+          minimum: 0
+        rejectedCount:
+          type: integer
+          minimum: 0
+        warnings:
+          type: array
+          items:
+            type: string
+
+    FinancialSummary:
+      type: object
+      required: [monthlyIncome, monthlyExpenses, monthlyEmi, cashFlowSurplus, debtToIncome]
+      properties:
+        monthlyIncome:
+          type: number
+        monthlyExpenses:
+          type: number
+        monthlyEmi:
+          type: number
+        cashFlowSurplus:
+          type: number
+        debtToIncome:
+          type: number
+        averageBalance:
+          type: number
+        incomeStability:
+          type: number
+        expenseVolatility:
+          type: number
+        transactionRegularity:
+          type: number
+        failedPaymentCount:
+          type: integer
+        observationMonths:
+          type: integer
+
+    FinancialSummaryResponse:
+      type: object
+      required: [applicationId, summary, generatedAt]
+      properties:
+        applicationId:
+          type: string
+        summary:
+          $ref: '#/components/schemas/FinancialSummary'
+        generatedAt:
+          type: string
+          format: date-time
+
+    DocumentUploadRequest:
+      type: object
+      required: [file, documentType]
+      properties:
+        file:
+          type: string
+          format: binary
+        documentType:
+          type: string
+          enum: [BANK_STATEMENT, TRANSACTION_EXPORT, CREDIT_REPORT, OTHER]
+        source:
+          type: string
+          enum: [UPLOADED_STATEMENT, SYNTHETIC, MANUAL_INPUT]
+          default: UPLOADED_STATEMENT
+
+    DocumentResponse:
+      type: object
+      required: [id, applicationId, filename, documentType, status, uploadedAt]
+      properties:
+        id:
+          type: string
+        applicationId:
+          type: string
+        filename:
+          type: string
+        documentType:
+          type: string
+          enum: [BANK_STATEMENT, TRANSACTION_EXPORT, CREDIT_REPORT, OTHER]
+        status:
+          type: string
+          enum: [UPLOADED, PROCESSING, PROCESSED, FAILED]
+        sizeBytes:
+          type: integer
+          format: int64
+        uploadedAt:
+          type: string
+          format: date-time
+
+    AssessmentRequest:
+      type: object
+      properties:
+        regenerateExplanation:
+          type: boolean
+          default: true
+        forceRecomputeFeatures:
+          type: boolean
+          default: false
+
+    RiskBand:
+      type: string
+      enum: [LOW, MODERATE, HIGH]
+
+    RiskFactor:
+      type: object
+      required: [feature, value, contribution, direction]
+      properties:
+        feature:
+          type: string
+        value:
+          oneOf:
+            - type: number
+            - type: string
+            - type: boolean
+        contribution:
+          type: number
+          description: Signed model-space contribution; negative means lower estimated default risk and positive means higher estimated default risk.
+        direction:
+          type: string
+          enum: [POSITIVE, NEGATIVE]
+        explanationKey:
+          type: string
+
+    RiskDataCoverage:
+      type: object
+      required: [financialDataAvailable, bureauDataAvailable, observationMonths]
+      properties:
+        financialDataAvailable:
+          type: boolean
+        bureauDataAvailable:
+          type: boolean
+        observationMonths:
+          type: integer
+          minimum: 0
+        dataSources:
+          type: array
+          items:
+            type: string
+
+    RiskAssessmentResponse:
+      type: object
+      required: [assessmentId, applicationId, riskScore, defaultProbability, riskBand, model, factors, dataCoverage, assessedAt]
+      properties:
+        assessmentId:
+          type: string
+        applicationId:
+          type: string
+        riskScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        defaultProbability:
+          type: number
+          minimum: 0
+          maximum: 1
+        riskBand:
+          $ref: '#/components/schemas/RiskBand'
+        model:
+          $ref: '#/components/schemas/ModelMetadata'
+        factors:
+          type: object
+          required: [positive, negative]
+          properties:
+            positive:
+              type: array
+              items:
+                $ref: '#/components/schemas/RiskFactor'
+            negative:
+              type: array
+              items:
+                $ref: '#/components/schemas/RiskFactor'
+        dataCoverage:
+          $ref: '#/components/schemas/RiskDataCoverage'
+        explanationStatus:
+          type: string
+          enum: [NOT_GENERATED, GENERATED, FALLBACK]
+        explanation:
+          $ref: '#/components/schemas/ExplanationResponse'
+        assessedAt:
+          type: string
+          format: date-time
+
+    ModelMetadata:
+      type: object
+      required: [name, version, featureSetVersion]
+      properties:
+        name:
+          type: string
+          example: logistic_regression
+        version:
+          type: string
+          example: v1.0.0
+        featureSetVersion:
+          type: string
+          example: features-v1
+        trainedAt:
+          type: string
+          format: date-time
+        trainingDataType:
+          type: string
+          enum: [SYNTHETIC, HISTORICAL]
+          default: SYNTHETIC
+
+    ExplanationRequest:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: gemini
+        model:
+          type: string
+          example: gemini-3.1-flash-lite
+        forceRegenerate:
+          type: boolean
+          default: false
+
+    ExplanationResponse:
+      type: object
+      required: [assessmentId, provider, model, promptVersion, summary, positiveFactors, riskFactors, dataLimitations, disclaimer, generatedAt]
+      properties:
+        assessmentId:
+          type: string
+        provider:
+          type: string
+          example: gemini
+        model:
+          type: string
+          example: gemini-3.1-flash-lite
+        promptVersion:
+          type: string
+          example: risk-explanation-v1
+        summary:
+          type: string
+        positiveFactors:
+          type: array
+          items:
+            type: string
+        riskFactors:
+          type: array
+          items:
+            type: string
+        dataLimitations:
+          type: array
+          items:
+            type: string
+        scenarioComparison:
+          type: string
+        disclaimer:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        fallbackUsed:
+          type: boolean
+          default: false
+
+    WhatIfRequest:
+      type: object
+      required: [overrides]
+      properties:
+        overrides:
+          type: object
+          description: Allowed financial-feature overrides. Unknown fields must be rejected by backend validation.
+          additionalProperties: false
+          properties:
+            monthlyIncome:
+              type: number
+              minimum: 0
+            monthlyExpenses:
+              type: number
+              minimum: 0
+            monthlyEmi:
+              type: number
+              minimum: 0
+            averageBalance:
+              type: number
+            incomeVolatility:
+              type: number
+              minimum: 0
+            expenseVolatility:
+              type: number
+              minimum: 0
+            transactionRegularity:
+              type: number
+              minimum: 0
+              maximum: 1
+            failedPaymentCount:
+              type: integer
+              minimum: 0
+
+    WhatIfResponse:
+      type: object
+      required: [scenarioId, baseline, scenario, changedFactors]
+      properties:
+        scenarioId:
+          type: string
+        baseline:
+          $ref: '#/components/schemas/RiskSnapshot'
+        scenario:
+          $ref: '#/components/schemas/RiskSnapshot'
+        changedFactors:
+          type: array
+          items:
+            type: object
+            required: [feature, before, after]
+            properties:
+              feature:
+                type: string
+              before:
+                type: number
+              after:
+                type: number
+        explanation:
+          type: string
+
+    RiskSnapshot:
+      type: object
+      required: [riskScore, defaultProbability, riskBand]
+      properties:
+        riskScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        defaultProbability:
+          type: number
+          minimum: 0
+          maximum: 1
+        riskBand:
+          $ref: '#/components/schemas/RiskBand'
+
+    MLPredictionRequest:
+      type: object
+      required: [applicationId, modelVersion, features]
+      properties:
+        applicationId:
+          type: string
+        modelVersion:
+          type: string
+        featureSetVersion:
+          type: string
+        features:
+          type: object
+          required: [monthlyIncome, monthlyExpenses, monthlyEmi, averageBalance]
+          properties:
+            monthlyIncome:
+              type: number
+            monthlyExpenses:
+              type: number
+            monthlyEmi:
+              type: number
+            averageBalance:
+              type: number
+            incomeStability:
+              type: number
+            incomeVolatility:
+              type: number
+            expenseVolatility:
+              type: number
+            cashFlowSurplus:
+              type: number
+            debtToIncome:
+              type: number
+            transactionRegularity:
+              type: number
+            failedPaymentCount:
+              type: integer
+            observationMonths:
+              type: integer
+            bureauHistoryAvailable:
+              type: boolean
+            creditHistoryLengthMonths:
+              type: integer
+              minimum: 0
+
+    MLPredictionResponse:
+      type: object
+      required: [applicationId, model, defaultProbability, riskScore, riskBand, factors]
+      properties:
+        applicationId:
+          type: string
+        model:
+          $ref: '#/components/schemas/ModelMetadata'
+        defaultProbability:
+          type: number
+          minimum: 0
+          maximum: 1
+        riskScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        riskBand:
+          $ref: '#/components/schemas/RiskBand'
+        factors:
+          type: object
+          required: [positive, negative]
+          properties:
+            positive:
+              type: array
+              items:
+                $ref: '#/components/schemas/RiskFactor'
+            negative:
+              type: array
+              items:
+                $ref: '#/components/schemas/RiskFactor'
+        generatedAt:
+          type: string
+          format: date-time
