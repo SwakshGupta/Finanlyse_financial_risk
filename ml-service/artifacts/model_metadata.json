@@ -1,0 +1,108 @@
+{
+  "model_name": "Logistic Regression Alternative Risk Baseline",
+  "model_version": "logistic_regression_v1.0.0",
+  "feature_set_version": "feature_set_v1",
+  "algorithm": "LOGISTIC_REGRESSION",
+  "training_timestamp": "2026-09-21T15:30:47.835998+00:00",
+  "training_samples": 2000,
+  "test_samples": 500,
+  "metrics": {
+    "train_roc_auc": 0.9363,
+    "test_roc_auc": 0.9496,
+    "test_accuracy": 0.84,
+    "test_f1": 0.7701,
+    "test_brier_score": 0.0905
+  },
+  "feature_coefficients": [
+    {
+      "feature": "debt_to_income",
+      "coefficient": 1.2616,
+      "odds_ratio": 3.531,
+      "effect": "INCREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "cash_flow_surplus",
+      "coefficient": -1.0113,
+      "odds_ratio": 0.3637,
+      "effect": "DECREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "transaction_regularity",
+      "coefficient": -0.7622,
+      "odds_ratio": 0.4666,
+      "effect": "DECREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "failed_payment_count",
+      "coefficient": 0.7614,
+      "odds_ratio": 2.1413,
+      "effect": "INCREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "average_balance",
+      "coefficient": -0.7165,
+      "odds_ratio": 0.4885,
+      "effect": "DECREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "expense_volatility",
+      "coefficient": 0.5367,
+      "odds_ratio": 1.7104,
+      "effect": "INCREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "income_stability",
+      "coefficient": -0.4993,
+      "odds_ratio": 0.6069,
+      "effect": "DECREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "monthly_income",
+      "coefficient": -0.4868,
+      "odds_ratio": 0.6146,
+      "effect": "DECREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "credit_history_length",
+      "coefficient": -0.3444,
+      "odds_ratio": 0.7086,
+      "effect": "DECREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "credit_history_available",
+      "coefficient": 0.166,
+      "odds_ratio": 1.1806,
+      "effect": "INCREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "monthly_expenses",
+      "coefficient": 0.1479,
+      "odds_ratio": 1.1594,
+      "effect": "INCREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "monthly_emi",
+      "coefficient": 0.0928,
+      "odds_ratio": 1.0972,
+      "effect": "INCREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "existing_debt_amount",
+      "coefficient": -0.0643,
+      "odds_ratio": 0.9378,
+      "effect": "DECREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "savings_rate",
+      "coefficient": -0.0614,
+      "odds_ratio": 0.9404,
+      "effect": "DECREASES_DEFAULT_RISK"
+    },
+    {
+      "feature": "recurring_obligation_amount",
+      "coefficient": 0.0254,
+      "odds_ratio": 1.0257,
+      "effect": "INCREASES_DEFAULT_RISK"
+    }
+  ]
+}

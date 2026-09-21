@@ -1,0 +1,43 @@
+{
+  "dataset_records": 2500,
+  "roc_auc": 0.9389,
+  "brier_score": 0.0994,
+  "confusion_matrix": [
+    [
+      1430,
+      277
+    ],
+    [
+      124,
+      669
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.9202059202059202,
+      "recall": 0.8377270064440538,
+      "f1-score": 0.8770315854032505,
+      "support": 1707.0
+    },
+    "1": {
+      "precision": 0.7071881606765328,
+      "recall": 0.8436317780580076,
+      "f1-score": 0.7694077055779184,
+      "support": 793.0
+    },
+    "accuracy": 0.8396,
+    "macro avg": {
+      "precision": 0.8136970404412265,
+      "recall": 0.8406793922510307,
+      "f1-score": 0.8232196454905845,
+      "support": 2500.0
+    },
+    "weighted avg": {
+      "precision": 0.8526366868831985,
+      "recall": 0.8396,
+      "f1-score": 0.8428932907226552,
+      "support": 2500.0
+    }
+  },
+  "disclaimer": "Model evaluated on calibrated synthetic financial benchmark data. Demonstrates mathematical consistency and factor interpretability for thin-file underwriting."
+}

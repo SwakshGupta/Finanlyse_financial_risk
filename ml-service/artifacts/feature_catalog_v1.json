@@ -1,0 +1,107 @@
+{
+  "monthly_income": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Total verified monthly income or inflow",
+    "default": 30000.0,
+    "direction": "DECREASES_RISK"
+  },
+  "monthly_expenses": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Total monthly non-debt living expenses",
+    "default": 18000.0,
+    "direction": "INCREASES_RISK"
+  },
+  "monthly_emi": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Monthly debt repayment and installment obligations",
+    "default": 2000.0,
+    "direction": "INCREASES_RISK"
+  },
+  "cash_flow_surplus": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Net discretionary income after expenses and EMI",
+    "default": 10000.0,
+    "direction": "DECREASES_RISK"
+  },
+  "debt_to_income": {
+    "type": "float",
+    "unit": "ratio",
+    "description": "Ratio of monthly debt obligations to monthly income",
+    "default": 0.08,
+    "direction": "INCREASES_RISK"
+  },
+  "average_balance": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Average daily bank or wallet account balance",
+    "default": 8500.0,
+    "direction": "DECREASES_RISK"
+  },
+  "income_stability": {
+    "type": "float",
+    "unit": "score [0, 1]",
+    "description": "Normalized stability metric of monthly earnings",
+    "default": 0.8,
+    "direction": "DECREASES_RISK"
+  },
+  "expense_volatility": {
+    "type": "float",
+    "unit": "score [0, 1]",
+    "description": "Volatility/variability metric of monthly outflow",
+    "default": 0.15,
+    "direction": "INCREASES_RISK"
+  },
+  "transaction_regularity": {
+    "type": "float",
+    "unit": "score [0, 1]",
+    "description": "Consistency score of recurring digital transactions",
+    "default": 0.82,
+    "direction": "DECREASES_RISK"
+  },
+  "savings_rate": {
+    "type": "float",
+    "unit": "ratio",
+    "description": "Proportion of income retained as savings or surplus",
+    "default": 0.25,
+    "direction": "DECREASES_RISK"
+  },
+  "failed_payment_count": {
+    "type": "int",
+    "unit": "count",
+    "description": "Count of bounced checks, ECS rejections, or failed debits",
+    "default": 0,
+    "direction": "INCREASES_RISK"
+  },
+  "recurring_obligation_amount": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Recurring utility, rent, and subscription commitments",
+    "default": 4000.0,
+    "direction": "INCREASES_RISK"
+  },
+  "existing_debt_amount": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Estimated total outstanding debt obligations",
+    "default": 15000.0,
+    "direction": "INCREASES_RISK"
+  },
+  "credit_history_available": {
+    "type": "int",
+    "unit": "binary [0, 1]",
+    "description": "Whether any formal bureau record exists",
+    "default": 0,
+    "direction": "NEUTRAL"
+  },
+  "credit_history_length": {
+    "type": "int",
+    "unit": "months",
+    "description": "Duration of formal credit relationship in months",
+    "default": 0,
+    "direction": "DECREASES_RISK"
+  }
+}

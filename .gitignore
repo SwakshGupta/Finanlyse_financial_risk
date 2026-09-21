@@ -87,7 +87,8 @@ backend/uploads/*
 tmp/
 scratch/
 
-# Trained model artifacts / large files (committed models will use versioned paths)
-ml-service/artifacts/*.joblib
+# Trained model artifacts / large files (committed models use versioned paths)
+# ml-service/artifacts/*.joblib
 ml-service/artifacts/*.pkl
 !ml-service/artifacts/.gitkeep
+!ml-service/artifacts/*.joblib
