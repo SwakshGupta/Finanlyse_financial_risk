@@ -3,6 +3,7 @@ import ScoreGauge from '../components/ScoreGauge';
 import RiskFactorCard from '../components/RiskFactorCard';
 import DataCoverageCard from '../components/DataCoverageCard';
 import AIExplanationCard from '../components/AIExplanationCard';
+import AssessmentChatDrawer from '../components/AssessmentChatDrawer';
 import { ArrowLeft, CheckCircle, AlertTriangle, AlertCircle, PlusCircle, Layers, FileText } from 'lucide-react';
 
 export default function AssessmentDashboardPage({ assessment, onNewAssessment, onViewApplications, showToast }) {
@@ -177,6 +178,12 @@ export default function AssessmentDashboardPage({ assessment, onNewAssessment, o
       <AIExplanationCard
         applicationId={applicationId}
         initialExplanation={assessment.explanation}
+        showToast={showToast}
+      />
+
+      {/* Interactive AI Credit Advisor Chat */}
+      <AssessmentChatDrawer
+        applicationId={applicationId}
         showToast={showToast}
       />
 

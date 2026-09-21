@@ -165,8 +165,17 @@ class ApiService {
       body: JSON.stringify(options),
     });
   }
+
+  // Conversational AI Assistant
+  async sendChatMessage(applicationId, { message, history = [] }) {
+    return this.request(`/applications/${applicationId}/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ message, history }),
+    });
+  }
 }
 
 export const api = new ApiService();
 export default api;
+
 

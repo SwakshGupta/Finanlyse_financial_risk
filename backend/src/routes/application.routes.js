@@ -162,5 +162,23 @@ router.post(
   explanationController.generateExplanation
 );
 
+// =============================================================================
+// Conversational AI Credit Assistant
+// =============================================================================
+const chatController = require('../controllers/chat.controller');
+
+// POST /api/v1/applications/:applicationId/chat - Send message to LLM assistant
+router.post(
+  '/:applicationId/chat',
+  [
+    applicationIdParamCheck,
+    body('message').trim().notEmpty().withMessage('message string is required'),
+    body('history').optional().isArray().withMessage('history must be an array'),
+    validate
+  ],
+  chatController.sendMessage
+);
+
 module.exports = router;
+
 
