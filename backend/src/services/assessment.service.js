@@ -86,7 +86,21 @@ class AssessmentService {
     // 7. Update application status to ASSESSED
     await applicationRepository.update(applicationId, { status: 'ASSESSED' });
 
-    // 8. Return formatted response conforming to OpenAPI RiskAssessmentResponse
+    // 8. Generate initial explanation if requested
+    let explanationStatus = 'NOT_GENERATED';
+    if (options.regenerateExplanation) {
+      try {
+        const explanationService = require('./explanation.service');
+        await explanationService.generateExplanation(applicationId, user, {
+          forceRegenerate: true,
+        });
+        explanationStatus = 'GENERATED';
+      } catch (err) {
+        console.warn('[AssessmentService] Could not generate explanation:', err.message);
+      }
+    }
+
+    // 9. Return formatted response conforming to OpenAPI RiskAssessmentResponse
     return {
       assessmentId: saved.id,
       applicationId,
@@ -96,7 +110,7 @@ class AssessmentService {
       model: mlResult.model,
       factors: mlResult.factors,
       dataCoverage,
-      explanationStatus: 'NOT_GENERATED',
+      explanationStatus,
       assessedAt: saved.created_at,
     };
   }

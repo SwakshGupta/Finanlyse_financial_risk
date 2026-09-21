@@ -326,8 +326,60 @@ async function handleQuery(text, params = []) {
     return { rows: factors };
   }
 
+  // ---------------------------------------------------------------------------
+  // LLM EXPLANATIONS
+  // ---------------------------------------------------------------------------
+  if (trimmed.startsWith('INSERT INTO llm_explanations')) {
+    const [id, assessment_id, provider, model, prompt_version, summary, full_explanation] = params;
+    const now = new Date().toISOString();
+    const explanation = {
+      id,
+      assessment_id,
+      provider,
+      model,
+      prompt_version,
+      summary,
+      full_explanation,
+      created_at: now
+    };
+    explanationsStore.set(id, explanation);
+    return { rows: [explanation] };
+  }
+
+  if (trimmed.includes('UPDATE risk_assessments SET explanation_status')) {
+    const assessmentId = params[0];
+    const assessment = assessmentsStore.get(assessmentId);
+    if (assessment) {
+      assessment.explanation_status = 'GENERATED';
+    }
+    return { rows: [] };
+  }
+
+  if (trimmed.includes('FROM llm_explanations') && trimmed.includes('WHERE assessment_id = $1')) {
+    const assessmentId = params[0];
+    const matching = Array.from(explanationsStore.values())
+      .filter(e => e.assessment_id === assessmentId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return { rows: matching.slice(0, 1) };
+  }
+
+  if (trimmed.includes('FROM llm_explanations e') && trimmed.includes('WHERE a.application_id = $1')) {
+    const appId = params[0];
+    // Find assessments for this app
+    const appAssessments = Array.from(assessmentsStore.values())
+      .filter(a => a.application_id === appId)
+      .map(a => a.id);
+
+    const matching = Array.from(explanationsStore.values())
+      .filter(e => appAssessments.includes(e.assessment_id))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return { rows: matching.slice(0, 1) };
+  }
+
   return { rows: [] };
 }
+
+const explanationsStore = new Map();
 
 const mockPool = {
   async query(text, params = []) {
@@ -355,9 +407,11 @@ const mockPool = {
     transactionsStore.clear();
     assessmentsStore.clear();
     riskFactorsStore.clear();
+    explanationsStore.clear();
   },
 
   async end() {}
 };
 
 module.exports = mockPool;
+

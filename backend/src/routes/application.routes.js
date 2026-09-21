@@ -134,4 +134,33 @@ router.get(
   assessmentController.getAssessment
 );
 
+// =============================================================================
+// LLM Explainability Endpoints
+// =============================================================================
+const explanationController = require('../controllers/explanation.controller');
+
+// GET /api/v1/applications/:applicationId/explanation - Get latest explanation
+router.get(
+  '/:applicationId/explanation',
+  [
+    applicationIdParamCheck,
+    validate
+  ],
+  explanationController.getExplanation
+);
+
+// POST /api/v1/applications/:applicationId/explanation - Generate or regenerate explanation
+router.post(
+  '/:applicationId/explanation',
+  [
+    applicationIdParamCheck,
+    body('provider').optional().isString(),
+    body('model').optional().isString(),
+    body('forceRegenerate').optional().isBoolean(),
+    validate
+  ],
+  explanationController.generateExplanation
+);
+
 module.exports = router;
+

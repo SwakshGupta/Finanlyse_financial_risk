@@ -2,9 +2,10 @@ import React from 'react';
 import ScoreGauge from '../components/ScoreGauge';
 import RiskFactorCard from '../components/RiskFactorCard';
 import DataCoverageCard from '../components/DataCoverageCard';
+import AIExplanationCard from '../components/AIExplanationCard';
 import { ArrowLeft, CheckCircle, AlertTriangle, AlertCircle, PlusCircle, Layers, FileText } from 'lucide-react';
 
-export default function AssessmentDashboardPage({ assessment, onNewAssessment, onViewApplications }) {
+export default function AssessmentDashboardPage({ assessment, onNewAssessment, onViewApplications, showToast }) {
   if (!assessment) {
     return (
       <div className="app-container" style={{ textAlign: 'center', padding: '80px 20px' }}>
@@ -171,6 +172,13 @@ export default function AssessmentDashboardPage({ assessment, onNewAssessment, o
           </div>
         </div>
       </div>
+
+      {/* Grounded AI Underwriting Narrative (Gemini / Provider-Agnostic) */}
+      <AIExplanationCard
+        applicationId={applicationId}
+        initialExplanation={assessment.explanation}
+        showToast={showToast}
+      />
 
       {/* Model-Derived Positive & Negative Drivers */}
       <div>

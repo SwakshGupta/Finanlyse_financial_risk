@@ -153,7 +153,20 @@ class ApiService {
   async getAssessment(applicationId) {
     return this.request(`/applications/${applicationId}/assessment`);
   }
+
+  // LLM Explainability
+  async getExplanation(applicationId) {
+    return this.request(`/applications/${applicationId}/explanation`);
+  }
+
+  async generateExplanation(applicationId, options = {}) {
+    return this.request(`/applications/${applicationId}/explanation`, {
+      method: 'POST',
+      body: JSON.stringify(options),
+    });
+  }
 }
 
 export const api = new ApiService();
 export default api;
+

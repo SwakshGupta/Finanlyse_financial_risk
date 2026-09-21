@@ -96,6 +96,7 @@ function MainApp() {
             assessment={currentAssessment}
             onNewAssessment={() => setActivePage('new-app')}
             onViewApplications={() => setActivePage('applications')}
+            showToast={showToast}
           />
         )}
       </main>
