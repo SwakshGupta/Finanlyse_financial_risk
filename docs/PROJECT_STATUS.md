@@ -4,7 +4,7 @@
 Build a complete, explainable, secure, locally runnable, and AWS-deployable dynamic financial-risk assessment platform for thin-file, new-to-credit, and underserved applicants. The system transforms consented financial behaviour into an Alternative Risk Score, Estimated Default Probability, Risk Band, Risk Drivers, and Data Coverage, paired with an interpretable, provider-agnostic LLM explanation layer (Gemini).
 
 ## Current Phase
-Phase 2 — Backend, Database & Security Foundation (Completed)
+Phase 3 — Financial Data Ingestion & Canonical Data Model (Completed)
 
 ## Completed Work
 - **Phase 1 — Project Foundation & Engineering Setup**:
@@ -15,25 +15,37 @@ Phase 2 — Backend, Database & Security Foundation (Completed)
   - ML virtual environment created with all Python dependencies installed and verified (2 passed).
 - **Phase 2 — Backend, Database & Security Foundation**:
   - PostgreSQL database connection pool (`pg.Pool`) in `backend/src/config/database.js` with retry, pooling, and health probes.
-  - Initial relational schema migration (`001_initial_schema.sql`) covering all 14 core tables from Master Architecture Section 12 (`users`, `applications`, `applicant_profiles`, `consents`, `data_sources`, `financial_profiles`, `transactions`, `engineered_features`, `risk_assessments`, `risk_factors`, `llm_explanations`, `uploaded_documents`, `audit_logs`, `schema_migrations`).
-  - Automated SQL migration runner in `backend/src/db/migrate.js`.
-  - Application error taxonomy in `backend/src/utils/errors.js` (`ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `ServiceUnavailableError`).
-  - Request ID tracing middleware (`backend/src/middleware/requestId.js`) generating/propagating `X-Request-Id`.
-  - Centralized error handling middleware strictly adhering to OpenAPI `ErrorResponse` schema (`code`, `message`, `requestId`, `details`).
-  - Request validation middleware (`backend/src/middleware/validate.js`) formatting express-validator issues.
-  - JWT authentication middleware (`backend/src/middleware/auth.js`) validating Bearer tokens.
-  - Role-based authorization middleware (`backend/src/middleware/rbac.js`) enforcing permissions (`APPLICANT`, `ANALYST`, `ADMIN`).
-  - User repository (`backend/src/repositories/user.repository.js`) for SQL data access.
-  - Auth service (`backend/src/services/auth.service.js`) with bcryptjs password hashing and JWT access/refresh token generation.
-  - Auth routes and controller (`/api/v1/auth/register`, `/api/v1/auth/login`, `/api/v1/auth/refresh`, protected `/api/v1/auth/me`, `/api/v1/auth/analyst-only`).
-  - Health and readiness routes (`/health`, `/ready`).
-  - Comprehensive automated test suite with 19 passing tests (`npm --prefix backend test`).
+  - Relational schema migration (`001_initial_schema.sql`) covering all 14 core tables.
+  - Migration runner (`backend/src/db/migrate.js`).
+  - Request ID tracing (`X-Request-Id`) and OpenAPI-compliant error formatting.
+  - JWT authentication and role-based authorization (`APPLICANT`, `ANALYST`, `ADMIN`).
+  - Auth and health endpoints (`/health`, `/ready`, `/api/v1/auth/*`).
+- **Phase 3 — Financial Data Ingestion & Canonical Data Model**:
+  - Canonical financial schema definitions and financial ratio calculator (`backend/src/modules/financial/canonical.schema.js`).
+  - Source Adapters:
+    - `ManualInputAdapter`: Normalizes applicant forms and raw transactions.
+    - `SyntheticDataAdapter`: Provides calibrated benchmark presets (`THIN_FILE_GIG_WORKER`, `NEW_TO_CREDIT_SALARIED`, `MICRO_ENTREPRENEUR`).
+    - `CsvTransactionAdapter`: Parses and validates tabular CSV statements.
+  - Repositories:
+    - `ApplicationRepository`: Transactional management of applications, applicant profiles, consents, and data sources.
+    - `FinancialRepository`: Persistence for normalized financial profiles and transactions.
+  - Services & Controllers:
+    - `ApplicationService` & `FinancialService`: Application lifecycle, applicant ownership verification, financial profile normalization, transaction ingestion, and financial summary calculation (`cashFlowSurplus`, `debtToIncome`).
+    - `ApplicationController` & `application.routes.js`: Exposes REST endpoints matching OpenAPI:
+      - `POST /api/v1/applications`
+      - `GET /api/v1/applications/:applicationId`
+      - `PUT /api/v1/applications/:applicationId`
+      - `POST /api/v1/applications/:applicationId/financial-profile`
+      - `POST /api/v1/applications/:applicationId/transactions`
+      - `GET /api/v1/applications/:applicationId/financial-summary`
+      - `POST /api/v1/applications/:applicationId/synthetic`
+      - `POST /api/v1/applications/:applicationId/csv-transactions`
+  - Automated tests: 31 backend tests passed, 2 ML tests passed.
 
 ## Active Work
-- None (Phase 2 complete, awaiting instructions for Phase 3)
+- None (Phase 3 complete, awaiting instructions for Phase 4)
 
 ## Pending Work
-- Phase 3 — Financial Data Ingestion & Canonical Data Model
 - Phase 4 — Feature Engineering & ML Pipeline
 - Phase 5 — ML Service & Backend Integration
 - Phase 6 — React Frontend & Complete Core User Flow
@@ -54,12 +66,12 @@ Phase 2 — Backend, Database & Security Foundation (Completed)
 - Database: PostgreSQL connection pool and migration runner implemented; supports live Postgres or hermetic test mode
 
 ## Testing Status
-- Backend Test Suite (Jest + Supertest): 2 suites, 19 tests passed
+- Backend Test Suite (Jest + Supertest): 3 suites, 31 tests passed
 - ML Service Test Suite (Pytest): 1 suite, 2 tests passed
-- Total automated tests: 21 passed (100% passing)
+- Total automated tests: 33 passed (100% passing)
 
 ## Deployment Status
 - Local-first prototype; not yet deployed to AWS.
 
 ## Next Recommended Task
-- Proceed to **Phase 3 — Financial Data Ingestion & Canonical Data Model**: Implement applicant profile creation, financial profile ingestion, transaction parsing, consent recording, and data source adapters (Manual, Synthetic, CSV) mapped to the canonical financial data model.
+- Proceed to **Phase 4 — Feature Engineering & ML Pipeline**: Build the financial feature catalog, synthetic data generation pipeline, feature normalizer/imputer, train the baseline Logistic Regression model on candidate features (cash flow surplus, debt-to-income, expense volatility, transaction regularity, savings rate), serialize model/preprocessing artifacts, and evaluate baseline performance metrics.

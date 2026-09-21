@@ -34,8 +34,8 @@ function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-va
     message = 'Database or dependent service connection refused';
   }
 
-  // Log in development or for 500 errors
-  if (process.env.NODE_ENV !== 'test' && statusCode >= 500) {
+  // Log 500 errors
+  if (statusCode >= 500) {
     console.error(`[Error] [${requestId}] ${statusCode} - ${message}:`, err);
   }
 

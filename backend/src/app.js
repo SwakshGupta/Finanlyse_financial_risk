@@ -9,6 +9,7 @@ const { NotFoundError } = require('./utils/errors');
 
 const healthRoutes = require('./routes/health.routes');
 const authRoutes = require('./routes/auth.routes');
+const applicationRoutes = require('./routes/application.routes');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/', healthRoutes);
 
 // Public API v1 endpoints
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/applications', applicationRoutes);
 
 // 404 handler for undefined routes
 app.use((req, res, next) => {

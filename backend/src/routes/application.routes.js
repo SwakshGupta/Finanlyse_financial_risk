@@ -1,0 +1,107 @@
+const express = require('express');
+const { body, param } = require('express-validator');
+const applicationController = require('../controllers/application.controller');
+const authenticate = require('../middleware/auth');
+const validate = require('../middleware/validate');
+
+const router = express.Router();
+
+// All application routes require authentication
+router.use(authenticate);
+
+const applicationIdParamCheck = param('applicationId')
+  .matches(/^app_[A-Za-z0-9_-]{8,64}$/)
+  .withMessage('applicationId must match pattern ^app_[A-Za-z0-9_-]{8,64}$');
+
+// POST /api/v1/applications - Create application
+router.post(
+  '/',
+  [
+    body('applicant').isObject().withMessage('applicant object is required'),
+    body('applicant.fullName').trim().notEmpty().withMessage('applicant.fullName is required'),
+    body('applicant.email').optional().isEmail().withMessage('applicant.email must be a valid email'),
+    body('consent').isArray({ min: 1 }).withMessage('consent array must contain at least one consent record'),
+    body('dataSource')
+      .optional()
+      .isIn(['MANUAL_INPUT', 'SYNTHETIC', 'UPLOADED_STATEMENT', 'ACCOUNT_AGGREGATOR', 'BUREAU'])
+      .withMessage('dataSource must be a recognized source type'),
+    validate
+  ],
+  applicationController.createApplication
+);
+
+// GET /api/v1/applications/:applicationId - Get application
+router.get(
+  '/:applicationId',
+  [applicationIdParamCheck, validate],
+  applicationController.getApplication
+);
+
+// PUT /api/v1/applications/:applicationId - Update application
+router.put(
+  '/:applicationId',
+  [
+    applicationIdParamCheck,
+    body('status').optional().isIn(['DRAFT', 'READY_FOR_ASSESSMENT']),
+    validate
+  ],
+  applicationController.updateApplication
+);
+
+// POST /api/v1/applications/:applicationId/financial-profile - Ingest financial profile
+router.post(
+  '/:applicationId/financial-profile',
+  [
+    applicationIdParamCheck,
+    body('monthlyIncome').isFloat({ min: 0 }).withMessage('monthlyIncome must be a non-negative number'),
+    body('monthlyExpenses').isFloat({ min: 0 }).withMessage('monthlyExpenses must be a non-negative number'),
+    body('monthlyEmi').isFloat({ min: 0 }).withMessage('monthlyEmi must be a non-negative number'),
+    body('averageBalance').isNumeric().withMessage('averageBalance must be a number'),
+    validate
+  ],
+  applicationController.upsertFinancialProfile
+);
+
+// POST /api/v1/applications/:applicationId/transactions - Add transaction batch
+router.post(
+  '/:applicationId/transactions',
+  [
+    applicationIdParamCheck,
+    body('transactions').isArray({ min: 1 }).withMessage('transactions array must have at least 1 transaction'),
+    body('transactions.*.amount').isFloat({ gt: 0 }).withMessage('transaction amount must be greater than 0'),
+    body('transactions.*.direction').isIn(['CREDIT', 'DEBIT']).withMessage('transaction direction must be CREDIT or DEBIT'),
+    validate
+  ],
+  applicationController.addTransactions
+);
+
+// GET /api/v1/applications/:applicationId/financial-summary - Get financial summary
+router.get(
+  '/:applicationId/financial-summary',
+  [applicationIdParamCheck, validate],
+  applicationController.getFinancialSummary
+);
+
+// POST /api/v1/applications/:applicationId/synthetic - Ingest synthetic preset
+router.post(
+  '/:applicationId/synthetic',
+  [
+    applicationIdParamCheck,
+    body('presetName').optional().isString(),
+    validate
+  ],
+  applicationController.ingestSynthetic
+);
+
+// POST /api/v1/applications/:applicationId/csv-transactions - Ingest CSV transactions
+router.post(
+  '/:applicationId/csv-transactions',
+  [
+    applicationIdParamCheck,
+    body('csvContent').isString().notEmpty().withMessage('csvContent string is required'),
+    validate
+  ],
+  applicationController.ingestCsv
+);
+
+module.exports = router;
