@@ -12,6 +12,11 @@ function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-va
     code = err.code;
     message = err.message;
     details = err.details || [];
+  } else if (err.statusCode) {
+    statusCode = err.statusCode;
+    code = err.code || (statusCode === 400 ? 'VALIDATION_ERROR' : statusCode === 403 ? 'FORBIDDEN' : statusCode === 404 ? 'NOT_FOUND' : 'ERROR');
+    message = err.message;
+    details = err.details || [];
   } else if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     code = 'UNAUTHORIZED';

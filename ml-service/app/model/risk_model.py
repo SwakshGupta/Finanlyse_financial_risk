@@ -23,15 +23,33 @@ class RiskModel:
         self.feature_set_version = FEATURE_SET_VERSION
 
     @classmethod
-    def load(cls, artifacts_dir: str = "artifacts") -> "RiskModel":
-        model_path = os.path.join(artifacts_dir, f"{MODEL_VERSION}.joblib")
-        scaler_path = os.path.join(artifacts_dir, "scaler_v1.0.0.joblib")
+    def load(cls, artifacts_dir: Optional[str] = None) -> "RiskModel":
+        search_dirs = []
+        if artifacts_dir:
+            search_dirs.append(artifacts_dir)
+        env_dir = os.environ.get("MODEL_ARTIFACTS_DIR")
+        if env_dir:
+            search_dirs.append(env_dir)
+        search_dirs.extend([
+            "artifacts",
+            "ml-service/artifacts",
+            os.path.join(os.path.dirname(__file__), "..", "..", "artifacts")
+        ])
 
-        if not os.path.exists(model_path) or not os.path.exists(scaler_path):
+        resolved_dir = None
+        for candidate in search_dirs:
+            if os.path.exists(candidate) and os.path.exists(os.path.join(candidate, f"{MODEL_VERSION}.joblib")):
+                resolved_dir = candidate
+                break
+
+        if not resolved_dir:
             raise FileNotFoundError(
-                f"Model artifacts not found in '{artifacts_dir}'. "
-                f"Ensure {model_path} and {scaler_path} exist."
+                f"Model artifacts not found. Searched paths: {search_dirs}. "
+                f"Ensure {MODEL_VERSION}.joblib and scaler_v1.0.0.joblib exist."
             )
+
+        model_path = os.path.join(resolved_dir, f"{MODEL_VERSION}.joblib")
+        scaler_path = os.path.join(resolved_dir, "scaler_v1.0.0.joblib")
 
         model = joblib.load(model_path)
         scaler = joblib.load(scaler_path)

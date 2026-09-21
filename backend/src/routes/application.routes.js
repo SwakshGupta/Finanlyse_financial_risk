@@ -104,4 +104,31 @@ router.post(
   applicationController.ingestCsv
 );
 
+// =============================================================================
+// Risk Assessment Endpoints
+// =============================================================================
+const assessmentController = require('../controllers/assessment.controller');
+
+// POST /api/v1/applications/:applicationId/assess - Run risk assessment
+router.post(
+  '/:applicationId/assess',
+  [
+    applicationIdParamCheck,
+    body('regenerateExplanation').optional().isBoolean(),
+    body('forceRecomputeFeatures').optional().isBoolean(),
+    validate
+  ],
+  assessmentController.assessApplication
+);
+
+// GET /api/v1/applications/:applicationId/assessment - Get latest risk assessment
+router.get(
+  '/:applicationId/assessment',
+  [
+    applicationIdParamCheck,
+    validate
+  ],
+  assessmentController.getAssessment
+);
+
 module.exports = router;

@@ -6,6 +6,8 @@ const consentsStore = new Map();
 const dataSourcesStore = new Map();
 const financialProfilesStore = new Map();
 const transactionsStore = new Map();
+const assessmentsStore = new Map();
+const riskFactorsStore = new Map();
 
 async function handleQuery(text, params = []) {
   const trimmed = text.trim();
@@ -219,6 +221,72 @@ async function handleQuery(text, params = []) {
     return { rows: [...txList] };
   }
 
+  // ---------------------------------------------------------------------------
+  // RISK ASSESSMENTS & RISK FACTORS
+  // ---------------------------------------------------------------------------
+  if (trimmed.startsWith('INSERT INTO risk_assessments')) {
+    const [
+      id, application_id, score, default_probability, risk_band,
+      model_version, model_name, feature_set_version, algorithm,
+      raw_factors, data_coverage, explanation_status, assessment_type
+    ] = params;
+    const now = new Date().toISOString();
+    const assessment = {
+      id,
+      application_id,
+      score,
+      default_probability,
+      risk_band,
+      model_version,
+      model_name,
+      feature_set_version,
+      algorithm,
+      raw_factors,
+      data_coverage,
+      explanation_status,
+      assessment_type,
+      created_at: now
+    };
+    assessmentsStore.set(id, assessment);
+    return { rows: [assessment] };
+  }
+
+  if (trimmed.startsWith('INSERT INTO risk_factors')) {
+    const [id, assessment_id, feature_name, impact, contribution, description] = params;
+    const factor = {
+      id,
+      assessment_id,
+      feature_name,
+      impact,
+      contribution,
+      description
+    };
+    const factors = riskFactorsStore.get(assessment_id) || [];
+    factors.push(factor);
+    riskFactorsStore.set(assessment_id, factors);
+    return { rows: [factor] };
+  }
+
+  if (trimmed.includes('FROM risk_assessments') && trimmed.includes('WHERE application_id = $1')) {
+    const appId = params[0];
+    const matching = Array.from(assessmentsStore.values())
+      .filter(a => a.application_id === appId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return { rows: matching.slice(0, 1) };
+  }
+
+  if (trimmed.includes('FROM risk_assessments') && trimmed.includes('WHERE id = $1')) {
+    const id = params[0];
+    const assessment = assessmentsStore.get(id);
+    return { rows: assessment ? [assessment] : [] };
+  }
+
+  if (trimmed.includes('FROM risk_factors') && trimmed.includes('WHERE assessment_id = $1')) {
+    const assessmentId = params[0];
+    const factors = riskFactorsStore.get(assessmentId) || [];
+    return { rows: factors };
+  }
+
   return { rows: [] };
 }
 
@@ -246,6 +314,8 @@ const mockPool = {
     dataSourcesStore.clear();
     financialProfilesStore.clear();
     transactionsStore.clear();
+    assessmentsStore.clear();
+    riskFactorsStore.clear();
   },
 
   async end() {}

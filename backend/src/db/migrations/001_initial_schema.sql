@@ -117,10 +117,16 @@ CREATE INDEX IF NOT EXISTS idx_features_app_id ON engineered_features(applicatio
 CREATE TABLE IF NOT EXISTS risk_assessments (
     id VARCHAR(64) PRIMARY KEY,
     application_id VARCHAR(64) NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
-    score INT NOT NULL CHECK (score >= 300 AND score <= 850),
+    score INT NOT NULL CHECK (score >= 0 AND score <= 100),
     default_probability NUMERIC(6, 4) NOT NULL CHECK (default_probability >= 0.0 AND default_probability <= 1.0),
-    risk_band VARCHAR(32) NOT NULL CHECK (risk_band IN ('VERY_LOW', 'LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH')),
+    risk_band VARCHAR(32) NOT NULL CHECK (risk_band IN ('LOW', 'MODERATE', 'HIGH')),
     model_version VARCHAR(64) NOT NULL,
+    model_name VARCHAR(128) DEFAULT 'Logistic Regression Alternative Risk Baseline',
+    feature_set_version VARCHAR(64) DEFAULT 'feature_set_v1',
+    algorithm VARCHAR(64) DEFAULT 'LOGISTIC_REGRESSION',
+    raw_factors JSONB,
+    data_coverage JSONB,
+    explanation_status VARCHAR(32) DEFAULT 'NOT_GENERATED',
     assessment_type VARCHAR(32) NOT NULL DEFAULT 'BASELINE' CHECK (assessment_type IN ('BASELINE', 'SCENARIO')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
