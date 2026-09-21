@@ -122,8 +122,8 @@ export default function NewApplicationPage({ onAssessmentComplete, showToast }) 
       }
 
       // Fetch computed canonical summary
-      const summary = await api.getFinancialSummary(createdApplicationId);
-      setFinancialSummary(summary);
+      const summaryRes = await api.getFinancialSummary(createdApplicationId);
+      setFinancialSummary(summaryRes.summary || summaryRes);
       setStep(3);
     } catch (err) {
       showToast(err.message || 'Failed to ingest financial data', 'error');
@@ -604,15 +604,21 @@ export default function NewApplicationPage({ onAssessmentComplete, showToast }) 
             >
               <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Monthly Inflow</span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff' }}>₹{Number(financialSummary.monthlyIncome).toLocaleString()}</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff' }}>
+                  ₹{Number(financialSummary.monthlyIncome ?? financialSummary.summary?.monthlyIncome ?? 0).toLocaleString()}
+                </div>
               </div>
               <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Net Cash Surplus</span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--emerald)' }}>₹{Number(financialSummary.cashFlowSurplus).toLocaleString()}</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--emerald)' }}>
+                  ₹{Number(financialSummary.cashFlowSurplus ?? financialSummary.summary?.cashFlowSurplus ?? 0).toLocaleString()}
+                </div>
               </div>
               <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Debt Burden (DTI)</span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--cyan)' }}>{(Number(financialSummary.debtToIncome) * 100).toFixed(1)}%</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--cyan)' }}>
+                  {(Number(financialSummary.debtToIncome ?? financialSummary.summary?.debtToIncome ?? 0) * 100).toFixed(1)}%
+                </div>
               </div>
             </div>
           )}
