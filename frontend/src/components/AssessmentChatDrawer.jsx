@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
   MessageSquare,
   Send,
@@ -10,28 +11,65 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Shield,
+  HeartHandshake,
 } from 'lucide-react';
 
-const SUGGESTED_PROMPTS = [
+const ANALYST_PROMPTS = [
+  'What is the primary debt serviceability risk for this file?',
+  'How does current DTI compare to prudent leverage limits?',
+  'What covenants or mitigants would support an approval?',
+  'Explain the mathematical impact of debt-to-income on default probability.',
+];
+
+const APPLICANT_PROMPTS = [
   'How was my 0–100 Alternative Risk Score calculated?',
   'What actionable steps can I take to improve my score?',
   'How does my debt-to-income (DTI) ratio impact my evaluation?',
   'Why was alternative cash flow data used instead of a credit bureau score?',
 ];
 
+const getInitialGreeting = (role) => {
+  if (role === 'ANALYST') {
+    return 'Hello Underwriter / Credit Analyst. I am your **Finalyse Underwriting Intelligence Assistant**. I have loaded this alternative credit risk file. Ask me about debt serviceability, cash-flow coverage, balance volatility, or counterfactual covenants.';
+  }
+  return 'Hello! I am your **Finalyse AI Credit Assistant**. I have analyzed your alternative risk assessment and cash-flow data. Feel free to ask me questions about your score, positive drivers, risk factors, or how to improve your financial profile.';
+};
+
 export default function AssessmentChatDrawer({ applicationId, showToast }) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(true);
+  const [activeRole, setActiveRole] = useState(
+    user?.role?.toUpperCase() === 'ANALYST' ? 'ANALYST' : 'APPLICANT'
+  );
+
   const [messages, setMessages] = useState([
     {
       role: 'model',
-      content:
-        'Hello! I am your **Finalyse AI Credit Assistant**. I have analyzed your alternative risk assessment and cash-flow data. Feel free to ask me questions about your score, positive drivers, risk factors, or how to improve your financial profile.',
+      content: getInitialGreeting(
+        user?.role?.toUpperCase() === 'ANALYST' ? 'ANALYST' : 'APPLICANT'
+      ),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesContainerRef = useRef(null);
+
+  // Sync role when user object becomes available
+  useEffect(() => {
+    if (user?.role) {
+      const detectedRole = user.role.toUpperCase() === 'ANALYST' ? 'ANALYST' : 'APPLICANT';
+      setActiveRole(detectedRole);
+      setMessages([
+        {
+          role: 'model',
+          content: getInitialGreeting(detectedRole),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    }
+  }, [user?.role]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -64,6 +102,7 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
       const res = await api.sendChatMessage(applicationId, {
         message: text,
         history: history.slice(-6), // Send last 3 exchanges
+        mode: activeRole,
       });
 
       const assistantTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -105,12 +144,33 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
     setMessages([
       {
         role: 'model',
-        content:
-          'Conversation reset. How else can I assist you with your alternative credit profile?',
+        content: getInitialGreeting(activeRole),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
   };
+
+  const togglePersonaMode = () => {
+    const nextRole = activeRole === 'ANALYST' ? 'APPLICANT' : 'ANALYST';
+    setActiveRole(nextRole);
+    setMessages([
+      {
+        role: 'model',
+        content: getInitialGreeting(nextRole),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+    if (showToast) {
+      showToast(
+        nextRole === 'ANALYST'
+          ? 'Switched to Institutional Underwriter Review Mode'
+          : 'Switched to Borrower Coaching Mode',
+        'info'
+      );
+    }
+  };
+
+  const activePrompts = activeRole === 'ANALYST' ? ANALYST_PROMPTS : APPLICANT_PROMPTS;
 
   // Helper to render simple markdown formatting (bold, bullet points)
   const renderMessageContent = (content) => {
@@ -180,7 +240,7 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
       {/* Header bar with toggle */}
       <div
         style={{
-          padding: '16px 20px',
+          padding: '14px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -196,20 +256,47 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
               width: '32px',
               height: '32px',
               borderRadius: '10px',
-              background: 'rgba(99, 102, 241, 0.2)',
+              background: activeRole === 'ANALYST' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(16, 185, 129, 0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--primary)',
+              color: activeRole === 'ANALYST' ? 'var(--primary)' : 'var(--emerald)',
             }}
           >
-            <Bot size={18} />
+            {activeRole === 'ANALYST' ? <Shield size={18} /> : <Bot size={18} />}
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>
-                AI Credit Advisor Chat
+                AI Credit Assistant
               </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePersonaMode();
+                }}
+                className="btn btn-sm"
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  background:
+                    activeRole === 'ANALYST'
+                      ? 'rgba(99, 102, 241, 0.15)'
+                      : 'rgba(16, 185, 129, 0.15)',
+                  color: activeRole === 'ANALYST' ? 'var(--primary)' : 'var(--emerald)',
+                  border:
+                    activeRole === 'ANALYST'
+                      ? '1px solid rgba(99, 102, 241, 0.35)'
+                      : '1px solid rgba(16, 185, 129, 0.35)',
+                  cursor: 'pointer',
+                }}
+                title="Click to toggle perspective between Underwriter Review and Borrower Coaching"
+              >
+                {activeRole === 'ANALYST' ? '🛡️ Underwriter Mode' : '🌱 Borrower Coaching Mode'}
+              </button>
               <span
                 style={{
                   fontSize: '0.65rem',
@@ -225,12 +312,14 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
               </span>
             </div>
             <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)' }}>
-              Ask follow-up questions about your alternative risk evaluation and credit factors
+              {activeRole === 'ANALYST'
+                ? 'Institutional Underwriting: Cash-flow coverage, DTI headroom, and risk covenants'
+                : 'Borrower Coaching: Gentle guidance, score factors, and positive cash-flow steps'}
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {isOpen && (
             <button
               className="btn btn-sm btn-outline"
@@ -275,7 +364,7 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
             <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', flexShrink: 0 }}>
               Suggested:
             </span>
-            {SUGGESTED_PROMPTS.map((prompt, idx) => (
+            {activePrompts.map((prompt, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSend(prompt)}
@@ -463,7 +552,11 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
           >
             <input
               type="text"
-              placeholder="Ask a question about your alternative risk score or financial factors..."
+              placeholder={
+                activeRole === 'ANALYST'
+                  ? 'Ask an underwriting question (e.g. DTI limits, covenant structures, risk factors)...'
+                  : 'Ask a question about your alternative risk score or financial factors...'
+              }
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}

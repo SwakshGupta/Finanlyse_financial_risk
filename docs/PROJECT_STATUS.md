@@ -62,11 +62,27 @@ Phase 6 — React Frontend & Complete Core User Flow (Completed)
   - Frontend interactive component `AIExplanationCard.jsx` embedded in the risk assessment dashboard with real-time regeneration controls.
   - 53 Jest tests + 17 Pytest tests (70 total automated tests) passing 100%.
 
+- **Phase 8 — What-If Analysis, Counterfactual Simulations & Role-Aware Conversational AI**:
+  - What-If Engine (`whatIf.service.js`, `whatIf.controller.js`, `POST /api/v1/applications/:applicationId/what-if`).
+  - Baseline Preservation Invariant: Authoritative assessments (`assessment_type = 'BASELINE'`) are never overwritten or shadowed by scenario simulations (`assessment_type = 'SCENARIO'`).
+  - Strict Override Validation: Rejects invalid or negative parameters with 400 Validation Error.
+  - Deterministic Feature Recalculation: Accurately recomputes `cashFlowSurplus`, `debtToIncome`, and `savingsRate`.
+  - ML Microservice Re-inference: Dispatches scenario feature vectors to FastAPI microservice for calibrated re-scoring.
+  - Role-Aware Conversational AI Assistant:
+    - Underwriter / Analyst Persona: Addressed as "Analyst" or "Underwriter" (never as applicant Arjun). Provides direct, objective, concise, and blunt underwriting evaluations regarding debt serviceability, cash-flow coverage, and covenant structures without borrower coaching.
+    - Borrower / Applicant Persona: Addressed warmly by name. Receives gentle, encouraging, empathetic, and constructive coaching guidance without cold or blunt rejection language.
+    - In-drawer persona toggle button allowing instant testing and perspective switching.
+  - Frontend Interactive What-If Simulator (`WhatIfSimulator.jsx`):
+    - Real-time parameter sliders for Monthly Income, Living Expenses, Committed Debt EMI, and Average Daily Balance.
+    - Quick scenario preset buttons (+20% Gig Inflows, -50% Debt EMI, -15% Expenses, +₹25k Buffer).
+    - Live projected ratio previews before simulation.
+    - Score delta badge (`+X pts`), default probability delta, factor comparison table, and grounded underwriting narrative callout.
+  - 64 Jest tests across 7 suites + 17 Pytest tests (81 total automated tests) passing 100%.
+
 ## Active Work
-- None (Phase 7 complete, ready for Phase 8: What-If Analysis & Scenario Simulation)
+- None (Phase 8 completed, ready for Phase 9: Hardening, Testing, Documentation & Containerization)
 
 ## Pending Work
-- Phase 8 — What-if Analysis & Product Differentiation
 - Phase 9 — Hardening, Testing, Documentation & Containerization
 - Phase 10 — AWS Deployment & Final Delivery
 
@@ -86,12 +102,12 @@ Phase 6 — React Frontend & Complete Core User Flow (Completed)
   - ML Microservice: `http://localhost:8000`
 
 ## Testing Status
-- Backend Test Suite (Jest + Supertest): 5 suites, 53 tests passed
+- Backend Test Suite (Jest + Supertest): 7 suites, 64 tests passed
 - ML Service Test Suite (Pytest): 4 suites, 17 tests passed
-- Total automated tests: 70 passed (100% passing)
+- Total automated tests: 81 passed (100% passing)
 
 ## Deployment Status
-- Local-first prototype running on localhost:3000 with live backend, ML microservice, and Gemini LLM explainability.
+- Local-first prototype running on localhost:3000 with live backend, ML microservice, Gemini explainability, and interactive what-if counterfactual scenario laboratory.
 
 ## Next Recommended Task
-- Proceed to **Phase 8 — What-If Analysis & Product Differentiation**: Implement scenario input, parameter validation, feature recalculation without database overwriting, scenario ML re-inference, baseline delta comparison, changed-feature indicators, and interactive dashboard what-if sliders.
+- Proceed to **Phase 9 — Hardening, Testing, Documentation & Containerization**.

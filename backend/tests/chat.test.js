@@ -132,6 +132,60 @@ describe('Conversational AI Credit Assistant (/api/v1/applications/:id/chat)', (
     expect(res.status).toBe(403);
   });
 
+  it('provides blunt underwriting analysis for Analyst and does not greet as applicant', async () => {
+    // Register analyst
+    const regAnalyst = await request(app)
+      .post('/api/v1/auth/register')
+      .send({
+        email: 'risk.officer@example.com',
+        password: 'password12345',
+        role: 'ANALYST',
+      });
+    const analystToken = regAnalyst.body.accessToken;
+
+    // Run assessment
+    await request(app)
+      .post(`/api/v1/applications/${applicationId}/assess`)
+      .set('Authorization', `Bearer ${analystToken}`)
+      .send();
+
+    // Send question as analyst
+    const res = await request(app)
+      .post(`/api/v1/applications/${applicationId}/chat`)
+      .set('Authorization', `Bearer ${analystToken}`)
+      .send({
+        message: 'Underwriting review: what are the key serviceability risks and levers?',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.reply).toBeDefined();
+    // Must identify file and provide underwriter briefing, NOT gentle coaching or greeting analyst as Aarav
+    expect(res.body.reply).toContain('Underwriter Briefing');
+    expect(res.body.reply).toContain('File: Aarav Mehta');
+    expect(res.body.reply).not.toContain('Hello Aarav Mehta, I am glad to assist you');
+    expect(res.body.reply).toContain('Leverage Ceiling');
+  });
+
+  it('provides gentle coaching for Applicant', async () => {
+    // Run assessment
+    await request(app)
+      .post(`/api/v1/applications/${applicationId}/assess`)
+      .set('Authorization', `Bearer ${applicantToken}`)
+      .send();
+
+    // Send question as applicant
+    const res = await request(app)
+      .post(`/api/v1/applications/${applicationId}/chat`)
+      .set('Authorization', `Bearer ${applicantToken}`)
+      .send({
+        message: 'How can I improve my score?',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.reply).toContain('Hello Aarav Mehta');
+    expect(res.body.reply).toContain('gentle, positive steps');
+  });
+
   it('validates that message string is provided', async () => {
     const res = await request(app)
       .post(`/api/v1/applications/${applicationId}/chat`)

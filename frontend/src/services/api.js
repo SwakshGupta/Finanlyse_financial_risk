@@ -167,10 +167,18 @@ class ApiService {
   }
 
   // Conversational AI Assistant
-  async sendChatMessage(applicationId, { message, history = [] }) {
+  async sendChatMessage(applicationId, { message, history = [], mode }) {
     return this.request(`/applications/${applicationId}/chat`, {
       method: 'POST',
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, mode }),
+    });
+  }
+
+  // Phase 8: What-If Counterfactual Scenario Simulator
+  async runWhatIfScenario(applicationId, { overrides = {} }) {
+    return this.request(`/applications/${applicationId}/what-if`, {
+      method: 'POST',
+      body: JSON.stringify({ overrides }),
     });
   }
 }

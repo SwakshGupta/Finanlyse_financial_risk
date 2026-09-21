@@ -308,8 +308,17 @@ async function handleQuery(text, params = []) {
 
   if (trimmed.includes('FROM risk_assessments') && trimmed.includes('WHERE application_id = $1')) {
     const appId = params[0];
+    const assessmentTypeParam = params[1] || (trimmed.includes('assessment_type = $2') ? params[1] : null);
+    const filterType = assessmentTypeParam || (trimmed.includes('assessment_type') ? 'BASELINE' : null);
+
     const matching = Array.from(assessmentsStore.values())
-      .filter(a => a.application_id === appId)
+      .filter(a => {
+        if (a.application_id !== appId) return false;
+        if (filterType) {
+          return a.assessment_type === filterType || !a.assessment_type;
+        }
+        return true;
+      })
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     return { rows: matching.slice(0, 1) };
   }

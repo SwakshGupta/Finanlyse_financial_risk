@@ -91,16 +91,33 @@ class AssessmentRepository {
   }
 
   /**
-   * Retrieve the latest risk assessment for an application
+   * Retrieve the latest risk assessment for an application.
+   * Defaults to fetching the authoritative BASELINE assessment so that
+   * counterfactual SCENARIO simulations do not overwrite or shadow the baseline score.
    */
-  async getLatestByApplicationId(applicationId) {
-    const query = `
-      SELECT * FROM risk_assessments
-      WHERE application_id = $1
-      ORDER BY created_at DESC
-      LIMIT 1;
-    `;
-    const result = await db.query(query, [applicationId]);
+  async getLatestByApplicationId(applicationId, assessmentType = 'BASELINE') {
+    let query;
+    let params;
+
+    if (assessmentType) {
+      query = `
+        SELECT * FROM risk_assessments
+        WHERE application_id = $1 AND (assessment_type = $2 OR assessment_type IS NULL)
+        ORDER BY created_at DESC
+        LIMIT 1;
+      `;
+      params = [applicationId, assessmentType];
+    } else {
+      query = `
+        SELECT * FROM risk_assessments
+        WHERE application_id = $1
+        ORDER BY created_at DESC
+        LIMIT 1;
+      `;
+      params = [applicationId];
+    }
+
+    const result = await db.query(query, params);
     if (!result.rows || result.rows.length === 0) {
       return null;
     }

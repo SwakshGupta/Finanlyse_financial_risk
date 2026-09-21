@@ -174,11 +174,29 @@ router.post(
     applicationIdParamCheck,
     body('message').trim().notEmpty().withMessage('message string is required'),
     body('history').optional().isArray().withMessage('history must be an array'),
+    body('mode').optional().isIn(['ANALYST', 'APPLICANT']).withMessage('mode must be ANALYST or APPLICANT'),
     validate
   ],
   chatController.sendMessage
 );
 
+// =============================================================================
+// What-if Counterfactual Scenario Analysis
+// =============================================================================
+const whatIfController = require('../controllers/whatIf.controller');
+
+// POST /api/v1/applications/:applicationId/what-if - Run what-if scenario
+router.post(
+  '/:applicationId/what-if',
+  [
+    applicationIdParamCheck,
+    body('overrides').isObject().withMessage('overrides object is required'),
+    validate
+  ],
+  whatIfController.runWhatIf
+);
+
 module.exports = router;
+
 
 

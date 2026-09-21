@@ -4,6 +4,7 @@ import RiskFactorCard from '../components/RiskFactorCard';
 import DataCoverageCard from '../components/DataCoverageCard';
 import AIExplanationCard from '../components/AIExplanationCard';
 import AssessmentChatDrawer from '../components/AssessmentChatDrawer';
+import WhatIfSimulator from '../components/WhatIfSimulator';
 import { ArrowLeft, CheckCircle, AlertTriangle, AlertCircle, PlusCircle, Layers, FileText } from 'lucide-react';
 
 export default function AssessmentDashboardPage({ assessment, onNewAssessment, onViewApplications, showToast }) {
@@ -178,6 +179,13 @@ export default function AssessmentDashboardPage({ assessment, onNewAssessment, o
       <AIExplanationCard
         applicationId={applicationId}
         initialExplanation={assessment.explanation}
+        showToast={showToast}
+      />
+
+      {/* Phase 8: Interactive What-If Risk Scenario Simulator */}
+      <WhatIfSimulator
+        applicationId={applicationId}
+        baselineAssessment={assessment}
         showToast={showToast}
       />
 
