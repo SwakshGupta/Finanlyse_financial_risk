@@ -158,13 +158,13 @@ Fill in your `GEMINI_API_KEY` and update `JWT_SECRET` with a secure random key.
 | Phase | Description | Status |
 |---|---|---|
 | **Phase 1** | **Project Foundation & Engineering Setup** | **Completed** |
-| **Phase 2** | Backend, Database & Security Foundation | Next |
-| **Phase 3** | Financial Data Ingestion & Canonical Data Model | Pending |
-| **Phase 4** | Feature Engineering & ML Pipeline | Pending |
-| **Phase 5** | ML Service & Backend Integration | Pending |
-| **Phase 6** | React Frontend & Complete Core User Flow | Pending |
-| **Phase 7** | Explainability Orchestrator, Gemini & Tool Calling | Pending |
-| **Phase 8** | What-if Analysis & Product Differentiation | Pending |
+| **Phase 2** | **Backend, Database & Security Foundation** | **Completed** |
+| **Phase 3** | **Financial Data Ingestion & Canonical Data Model** | **Completed** |
+| **Phase 4** | **Feature Engineering & ML Pipeline** | **Completed** |
+| **Phase 5** | **ML Service & Backend Integration** | **Completed** |
+| **Phase 6** | **React Frontend & Complete Core User Flow** | **Completed** |
+| **Phase 7** | **Explainability Orchestrator, Gemini & Tool Calling** | **Completed** |
+| **Phase 8** | What-if Analysis & Product Differentiation | Next |
 | **Phase 9** | Hardening, Testing, Documentation & Containerization | Pending |
 | **Phase 10** | AWS Deployment & Final Delivery | Pending |
 

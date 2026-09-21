@@ -49,12 +49,23 @@ Phase 6 — React Frontend & Complete Core User Flow (Completed)
   - Applications List & Queue (`ApplicationsListPage.jsx`) supporting search and review.
   - API Client layer (`src/services/api.js`) and Auth State Context (`AuthContext.jsx`) with live backend health probing.
   - 42 Jest tests + 17 Pytest tests passing (59 total automated tests). Production Vite bundle built successfully.
+- **Phase 7 — Explainability Orchestrator, Gemini & Tool Calling**:
+  - Provider-agnostic LLM interface in `backend/src/integrations/llm/provider.interface.js` supporting text, structured JSON, and tool-augmented generation.
+  - Google Gemini provider in `gemini.provider.js` using `gemini-3.1-flash-lite` with schema enforcement and tool dispatching.
+  - Offline `MockProvider` in `mock.provider.js` and `LLMFactory` for seamless zero-latency test execution.
+  - Versioned prompt template `risk-explanation-v1` enforcing strict grounding and prohibiting score alteration or bureau hallucinations.
+  - Read-only underwriting tools in `catalog.tools.js`: `getFeatureDefinition` and `getRiskMethodology`.
+  - Structured output validation schema in `schemas/explanation.schema.js`.
+  - Deterministic safety fallback generator in `fallback.generator.js` with automatic failover if API key is invalid, rate-limited, or times out.
+  - PostgreSQL persistence in `llm_explanations` table via `explanation.repository.js` and `explanation.service.js`.
+  - REST API endpoints `GET /api/v1/applications/:applicationId/explanation` and `POST /api/v1/applications/:applicationId/explanation`.
+  - Frontend interactive component `AIExplanationCard.jsx` embedded in the risk assessment dashboard with real-time regeneration controls.
+  - 53 Jest tests + 17 Pytest tests (70 total automated tests) passing 100%.
 
 ## Active Work
-- None (Phase 6 complete, ready for Phase 7: Explainability Orchestrator & Gemini)
+- None (Phase 7 complete, ready for Phase 8: What-If Analysis & Scenario Simulation)
 
 ## Pending Work
-- Phase 7 — Explainability Orchestrator, Gemini & Tool Calling
 - Phase 8 — What-if Analysis & Product Differentiation
 - Phase 9 — Hardening, Testing, Documentation & Containerization
 - Phase 10 — AWS Deployment & Final Delivery
@@ -68,19 +79,19 @@ Phase 6 — React Frontend & Complete Core User Flow (Completed)
 - Node.js: v24.7.0
 - npm: 11.5.1
 - Python: 3.13.9 in `ml-service/.venv`
-- Database: PostgreSQL connection pool, migrations 001/002, and test mock pool
+- Database: PostgreSQL connection pool, migrations 001/002/003, and test mock pool
 - Dev Servers Running:
   - Frontend: `http://localhost:3000`
   - Backend: `http://localhost:4000`
   - ML Microservice: `http://localhost:8000`
 
 ## Testing Status
-- Backend Test Suite (Jest + Supertest): 4 suites, 42 tests passed
+- Backend Test Suite (Jest + Supertest): 5 suites, 53 tests passed
 - ML Service Test Suite (Pytest): 4 suites, 17 tests passed
-- Total automated tests: 59 passed (100% passing)
+- Total automated tests: 70 passed (100% passing)
 
 ## Deployment Status
-- Local-first prototype running on localhost:3000 with live backend and ML microservice.
+- Local-first prototype running on localhost:3000 with live backend, ML microservice, and Gemini LLM explainability.
 
 ## Next Recommended Task
-- Proceed to **Phase 7 — Explainability Orchestrator, Gemini & Tool Calling**: Implement provider-agnostic LLM interface, Gemini provider (`gemini-3.1-flash-lite`), prompt versioning, structured schema validation, read-only underwriting tools, deterministic fallback explanation, and PostgreSQL explanation persistence.
+- Proceed to **Phase 8 — What-If Analysis & Product Differentiation**: Implement scenario input, parameter validation, feature recalculation without database overwriting, scenario ML re-inference, baseline delta comparison, changed-feature indicators, and interactive dashboard what-if sliders.
