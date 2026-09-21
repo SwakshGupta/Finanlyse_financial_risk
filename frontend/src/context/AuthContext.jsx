@@ -25,8 +25,8 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        const userData = await api.getMe();
-        setUser(userData);
+        const res = await api.getMe();
+        setUser(res.user || res);
       } catch (err) {
         console.warn('Session expired or invalid, logging out', err);
         api.logout();

@@ -4,6 +4,10 @@ import { ShieldCheck, User, LogOut, PlusCircle, Layers, Activity } from 'lucide-
 
 export default function Navbar({ activePage, setActivePage }) {
   const { user, logout, backendHealthy } = useAuth();
+  const currentUser = user?.user || user;
+  const userEmail = currentUser?.email || '';
+  const userRole = currentUser?.role || 'APPLICANT';
+  const displayName = userEmail ? userEmail.split('@')[0] : 'User';
 
   return (
     <header className="glass-panel" style={{ margin: '16px 20px 0', padding: '14px 24px', borderRadius: '16px' }}>
@@ -106,28 +110,28 @@ export default function Navbar({ activePage, setActivePage }) {
                   width: '26px',
                   height: '26px',
                   borderRadius: '50%',
-                  background: user.role === 'ANALYST' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(99, 102, 241, 0.2)',
+                  background: userRole === 'ANALYST' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(99, 102, 241, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: user.role === 'ANALYST' ? 'var(--cyan)' : 'var(--primary)',
+                  color: userRole === 'ANALYST' ? 'var(--cyan)' : 'var(--primary)',
                 }}
               >
                 <User size={14} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                  {user.email.split('@')[0]}
+                  {displayName}
                 </span>
                 <span
                   style={{
                     fontSize: '0.65rem',
                     fontWeight: 700,
-                    color: user.role === 'ANALYST' ? 'var(--cyan)' : '#a5b4fc',
+                    color: userRole === 'ANALYST' ? 'var(--cyan)' : '#a5b4fc',
                     textTransform: 'uppercase',
                   }}
                 >
-                  {user.role}
+                  {userRole}
                 </span>
               </div>
             </div>

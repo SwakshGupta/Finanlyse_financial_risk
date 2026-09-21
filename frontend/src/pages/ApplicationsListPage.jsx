@@ -15,6 +15,8 @@ import {
 
 export default function ApplicationsListPage({ onSelectApplication, onNewApplication, showToast }) {
   const { user } = useAuth();
+  const currentUser = user?.user || user;
+  const userRole = currentUser?.role || 'APPLICANT';
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +51,7 @@ export default function ApplicationsListPage({ onSelectApplication, onNewApplica
         <div>
           <h1 className="page-title">Underwriting Applications</h1>
           <p className="page-subtitle">
-            {user?.role === 'ANALYST'
+            {userRole === 'ANALYST'
               ? 'Institutional Credit Queue — Review and audit all submitted loan files'
               : 'Your submitted alternative credit assessments'}
           </p>
