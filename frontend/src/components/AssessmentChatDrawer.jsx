@@ -31,10 +31,12 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -307,6 +309,7 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
 
           {/* Messages Scroll Area */}
           <div
+            ref={messagesContainerRef}
             style={{
               flex: 1,
               padding: '16px 20px',
@@ -445,8 +448,6 @@ export default function AssessmentChatDrawer({ applicationId, showToast }) {
                 </div>
               </div>
             )}
-
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Chat Input Bar */}
