@@ -5,19 +5,29 @@ Handles feature vector conversion, normalization, and contribution attribution.
 
 from typing import Dict, Any, List, Tuple
 import numpy as np
-from app.features.catalog import ORDERED_FEATURE_NAMES, FEATURE_CATALOG, extract_feature_vector
+from app.features.catalog import (
+    ORDERED_FEATURE_NAMES_V1,
+    ORDERED_FEATURE_NAMES_V2,
+    FEATURE_SET_VERSION_V1,
+    FEATURE_SET_VERSION_V2,
+    extract_feature_vector
+)
 
 class PreprocessingPipeline:
-    def __init__(self, scaler=None):
+    def __init__(self, scaler=None, feature_set_version: str = FEATURE_SET_VERSION_V2):
         self.scaler = scaler
-        self.feature_names = ORDERED_FEATURE_NAMES
+        self.feature_set_version = feature_set_version
+        if feature_set_version == FEATURE_SET_VERSION_V1:
+            self.feature_names = ORDERED_FEATURE_NAMES_V1
+        else:
+            self.feature_names = ORDERED_FEATURE_NAMES_V2
 
     def transform(self, raw_features: Dict[str, Any]) -> Tuple[np.ndarray, List[float]]:
         """
         Extracts raw feature vector and applies standard scaling.
         Returns: (scaled_vector_2d, unscaled_vector_list)
         """
-        raw_vector = extract_feature_vector(raw_features)
+        raw_vector = extract_feature_vector(raw_features, version=self.feature_set_version)
         arr = np.array(raw_vector).reshape(1, -1)
 
         if self.scaler is not None:
@@ -34,7 +44,7 @@ class PreprocessingPipeline:
         raw_features: Dict[str, Any],
         weights: np.ndarray,
         intercept: float,
-        top_n: int = 4
+        top_n: int = 5
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Calculates linear log-odds feature contributions.
@@ -51,6 +61,8 @@ class PreprocessingPipeline:
         negative_factors = []
 
         for i, fname in enumerate(self.feature_names):
+            if i >= len(w) or i >= len(z_scores):
+                continue
             val = raw_vec[i]
             contrib = float(w[i] * z_scores[i])
 

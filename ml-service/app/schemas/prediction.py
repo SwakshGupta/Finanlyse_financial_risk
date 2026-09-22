@@ -21,15 +21,22 @@ class FeaturePayload(BaseModel):
     savingsRate: Optional[float] = Field(default=None)
     failedPaymentCount: Optional[int] = Field(default=0, ge=0)
     recurringObligationAmount: Optional[float] = Field(default=0.0, ge=0)
+    nonDebtRecurringObligations: Optional[float] = Field(default=0.0, ge=0)
     existingDebtAmount: Optional[float] = Field(default=0.0, ge=0)
-    observationMonths: Optional[int] = Field(default=6, ge=1, le=60)
+    observationMonths: Optional[int] = Field(default=24, ge=1, le=60)
     bureauHistoryAvailable: Optional[bool] = Field(default=False)
     creditHistoryLengthMonths: Optional[int] = Field(default=0, ge=0)
+    # V2 24-Month Temporal and Behavioral Features
+    minimumBalanceRatio: Optional[float] = Field(default=0.20, ge=0)
+    negativeCashflowMonths: Optional[int] = Field(default=0, ge=0, le=60)
+    incomeTrend3m: Optional[float] = Field(default=0.0)
+    utilityPaymentConsistency: Optional[float] = Field(default=0.88, ge=0, le=1)
+    digitalTransactionRatio: Optional[float] = Field(default=0.82, ge=0, le=1)
 
 class MLPredictionRequest(BaseModel):
     applicationId: str = Field(..., description="Unique application identifier")
-    modelVersion: Optional[str] = Field(default="logistic_regression_v1.0.0")
-    featureSetVersion: Optional[str] = Field(default="feature_set_v1")
+    modelVersion: Optional[str] = Field(default="logistic_regression_v2.0.0")
+    featureSetVersion: Optional[str] = Field(default="feature_set_v2")
     features: Dict[str, Any] = Field(..., description="Financial feature dictionary")
 
 class RiskFactor(BaseModel):

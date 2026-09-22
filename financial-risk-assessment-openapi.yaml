@@ -1065,6 +1065,39 @@ components:
           type: integer
         observationMonths:
           type: integer
+        minimumBalanceRatio:
+          type: number
+          description: Ratio of minimum account balance to average balance
+        negativeCashflowMonths:
+          type: integer
+          description: Count of months where expenses + debt exceeded income
+        incomeTrend3m:
+          type: number
+          description: Fractional slope/change comparing latest 3 months to baseline
+        utilityPaymentConsistency:
+          type: number
+          description: Score reflecting regular on-time utility and telecommunication payments
+        digitalTransactionRatio:
+          type: number
+          description: Share of transactions processed via digital rails (UPI, Card, Netbanking)
+        nonDebtRecurringObligations:
+          type: number
+          description: Living subscriptions, utility bills, and insurance distinct from loan EMIs
+        incomeHistory:
+          type: array
+          description: Longitudinal 24-month gross inflow series
+          items:
+            type: object
+            properties:
+              month:
+                type: string
+              amount:
+                type: number
+              label:
+                type: string
+        trajectoryInsights:
+          type: object
+          description: Qualitative and quantitative 24-month trajectory indicators
 
     FinancialSummaryResponse:
       type: object
@@ -1119,6 +1152,9 @@ components:
     AssessmentRequest:
       type: object
       properties:
+        modelVersion:
+          type: string
+          description: Optional model version override (e.g. logistic_regression_v2.0.0 or v1.0.0)
         regenerateExplanation:
           type: boolean
           default: true
@@ -1132,23 +1168,16 @@ components:
 
     RiskFactor:
       type: object
-      required: [feature, value, contribution, direction]
+      required: [featureName, contribution, direction]
       properties:
-        feature:
+        featureName:
           type: string
-        value:
-          oneOf:
-            - type: number
-            - type: string
-            - type: boolean
         contribution:
           type: number
           description: Signed model-space contribution; negative means lower estimated default risk and positive means higher estimated default risk.
         direction:
           type: string
           enum: [POSITIVE, NEGATIVE]
-        explanationKey:
-          type: string
 
     RiskDataCoverage:
       type: object
@@ -1165,6 +1194,13 @@ components:
           type: array
           items:
             type: string
+        temporalCoverage:
+          type: string
+          description: e.g. 24_MONTHS
+        minimumBalanceRatio:
+          type: number
+        digitalTransactionRatio:
+          type: number
 
     RiskAssessmentResponse:
       type: object
@@ -1200,6 +1236,8 @@ components:
                 $ref: '#/components/schemas/RiskFactor'
         dataCoverage:
           $ref: '#/components/schemas/RiskDataCoverage'
+        financialSummary:
+          $ref: '#/components/schemas/FinancialSummary'
         explanationStatus:
           type: string
           enum: [NOT_GENERATED, GENERATED, FALLBACK]

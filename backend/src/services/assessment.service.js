@@ -34,10 +34,10 @@ class AssessmentService {
 
     const transactions = await financialRepository.getTransactions(applicationId);
 
-    // 3. Derive canonical summary metrics
+    // 3. Derive canonical summary metrics and 24-month temporal behavior
     const summary = deriveFinancialSummary(finProfile, transactions);
 
-    // 4. Build feature vector for ML microservice
+    // 4. Build feature vector for ML microservice (Feature Set V2 - 20 features)
     const features = {
       monthlyIncome: summary.monthlyIncome,
       monthlyExpenses: summary.monthlyExpenses,
@@ -47,12 +47,19 @@ class AssessmentService {
       cashFlowSurplus: summary.cashFlowSurplus,
       debtToIncome: summary.debtToIncome,
       savingsRate: summary.savingsRate,
+      minimumBalanceRatio: summary.minimumBalanceRatio,
       incomeStability: summary.incomeStability,
       expenseVolatility: summary.expenseVolatility,
       transactionRegularity: summary.transactionRegularity,
+      negativeCashflowMonths: summary.negativeCashflowMonths,
+      incomeTrend3m: summary.incomeTrend3m,
+      utilityPaymentConsistency: summary.utilityPaymentConsistency,
+      digitalTransactionRatio: summary.digitalTransactionRatio,
       failedPaymentCount: summary.failedPaymentCount,
-      recurringObligationAmount: summary.monthlyEmi,
-      observationMonths: 6,
+      nonDebtRecurringObligations: summary.nonDebtRecurringObligations,
+      recurringObligationAmount: summary.nonDebtRecurringObligations, // backward compatibility
+      existingDebtAmount: summary.existingDebtAmount,
+      observationMonths: summary.observationMonths || 24,
       bureauHistoryAvailable: false,
       creditHistoryLengthMonths: 0,
     };
@@ -66,7 +73,10 @@ class AssessmentService {
     const dataCoverage = {
       financialDataAvailable: true,
       bureauDataAvailable: false,
-      observationMonths: 6,
+      observationMonths: summary.observationMonths || 24,
+      utilityPaymentHistoryAvailable: Boolean(summary.utilityPaymentConsistency !== undefined),
+      digitalTransactionMetadataAvailable: Boolean(summary.digitalTransactionRatio !== undefined),
+      transactionsCount: transactions.length,
       dataSources: app.dataSources || ['MANUAL_INPUT'],
     };
 
@@ -110,6 +120,7 @@ class AssessmentService {
       model: mlResult.model,
       factors: mlResult.factors,
       dataCoverage,
+      financialSummary: summary,
       explanationStatus,
       assessedAt: saved.created_at,
     };
@@ -142,7 +153,9 @@ class AssessmentService {
       coverage = {
         financialDataAvailable: true,
         bureauDataAvailable: false,
-        observationMonths: 6,
+        observationMonths: 24,
+        utilityPaymentHistoryAvailable: true,
+        digitalTransactionMetadataAvailable: true,
         dataSources: app.dataSources || ['MANUAL_INPUT'],
       };
     }
@@ -152,6 +165,18 @@ class AssessmentService {
       factors = typeof assessment.raw_factors === 'string' ? JSON.parse(assessment.raw_factors) : assessment.raw_factors;
     }
 
+    // Attempt to enrich with financial summary for 24-month timeline & trajectory display
+    let summary = null;
+    try {
+      const finProfile = await financialRepository.getFinancialProfile(applicationId);
+      const transactions = await financialRepository.getTransactions(applicationId);
+      if (finProfile) {
+        summary = deriveFinancialSummary(finProfile, transactions);
+      }
+    } catch {
+      // Non-blocking fallback
+    }
+
     return {
       assessmentId: assessment.id,
       applicationId: assessment.application_id,
@@ -159,14 +184,15 @@ class AssessmentService {
       defaultProbability: parseFloat(assessment.default_probability),
       riskBand: assessment.risk_band,
       model: {
-        name: assessment.model_name || 'Logistic Regression Alternative Risk Baseline',
-        version: assessment.model_version || 'logistic_regression_v1.0.0',
-        featureSetVersion: assessment.feature_set_version || 'feature_set_v1',
+        name: assessment.model_name || 'Logistic Regression 24-Month Temporal Risk Model',
+        version: assessment.model_version || 'logistic_regression_v2.0.0',
+        featureSetVersion: assessment.feature_set_version || 'feature_set_v2',
         algorithm: assessment.algorithm || 'LOGISTIC_REGRESSION',
         trainingDataType: 'SYNTHETIC',
       },
       factors: factors || { positive: [], negative: [] },
       dataCoverage: coverage,
+      financialSummary: summary,
       explanationStatus: assessment.explanation_status || 'NOT_GENERATED',
       assessedAt: assessment.created_at,
     };

@@ -1,0 +1,142 @@
+{
+  "monthly_income": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Average verified monthly income or inflow over 24-month window",
+    "default": 35000.0,
+    "direction": "DECREASES_RISK"
+  },
+  "monthly_expenses": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Average monthly living and non-debt operational expenses",
+    "default": 20000.0,
+    "direction": "INCREASES_RISK"
+  },
+  "monthly_emi": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Average monthly debt service and installment commitments",
+    "default": 2500.0,
+    "direction": "INCREASES_RISK"
+  },
+  "cash_flow_surplus": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Net uncommitted cash surplus (Income - Expenses - EMI)",
+    "default": 12500.0,
+    "direction": "DECREASES_RISK"
+  },
+  "debt_to_income": {
+    "type": "float",
+    "unit": "ratio",
+    "description": "Ratio of monthly debt obligations to monthly income",
+    "default": 0.08,
+    "direction": "INCREASES_RISK"
+  },
+  "average_balance": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Average daily bank or digital wallet account balance",
+    "default": 12000.0,
+    "direction": "DECREASES_RISK"
+  },
+  "minimum_balance_ratio": {
+    "type": "float",
+    "unit": "ratio",
+    "description": "Ratio of lowest observed balance to monthly income (liquidity stress floor)",
+    "default": 0.2,
+    "direction": "DECREASES_RISK"
+  },
+  "income_stability": {
+    "type": "float",
+    "unit": "score [0, 1]",
+    "description": "Normalized stability metric of monthly earnings over 24 months",
+    "default": 0.82,
+    "direction": "DECREASES_RISK"
+  },
+  "expense_volatility": {
+    "type": "float",
+    "unit": "score [0, 1]",
+    "description": "Volatility and variability of monthly expenditures",
+    "default": 0.16,
+    "direction": "INCREASES_RISK"
+  },
+  "transaction_regularity": {
+    "type": "float",
+    "unit": "score [0, 1]",
+    "description": "Consistency score of recurring digital transactions across observation periods",
+    "default": 0.85,
+    "direction": "DECREASES_RISK"
+  },
+  "negative_cashflow_months": {
+    "type": "int",
+    "unit": "count [0-24]",
+    "description": "Number of observed months where living expenses and debt exceeded total inflows",
+    "default": 0,
+    "direction": "INCREASES_RISK"
+  },
+  "income_trend_3m": {
+    "type": "float",
+    "unit": "ratio",
+    "description": "Trailing income trajectory percentage comparing recent vs earliest observation periods",
+    "default": 0.02,
+    "direction": "DECREASES_RISK"
+  },
+  "utility_payment_consistency": {
+    "type": "float",
+    "unit": "score [0, 1]",
+    "description": "Proportion of recurring utility and telecom invoices settled on or before due date",
+    "default": 0.88,
+    "direction": "DECREASES_RISK"
+  },
+  "digital_transaction_ratio": {
+    "type": "float",
+    "unit": "score [0, 1]",
+    "description": "Proportion of transactions conducted via traceable digital payment rails (UPI, cards, netbanking)",
+    "default": 0.82,
+    "direction": "DECREASES_RISK"
+  },
+  "savings_rate": {
+    "type": "float",
+    "unit": "ratio",
+    "description": "Proportion of monthly income retained as uncommitted savings",
+    "default": 0.28,
+    "direction": "DECREASES_RISK"
+  },
+  "failed_payment_count": {
+    "type": "int",
+    "unit": "count",
+    "description": "Count of bounced checks, ECS rejections, NACH failures, or failed debits",
+    "default": 0,
+    "direction": "INCREASES_RISK"
+  },
+  "non_debt_recurring_obligations": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Essential non-debt recurring commitments such as utilities, rent, and telecom (excluding debt EMI)",
+    "default": 4500.0,
+    "direction": "INCREASES_RISK"
+  },
+  "existing_debt_amount": {
+    "type": "float",
+    "unit": "INR",
+    "description": "Estimated total outstanding principal debt obligations",
+    "default": 20000.0,
+    "direction": "INCREASES_RISK"
+  },
+  "credit_history_available": {
+    "type": "int",
+    "unit": "binary [0, 1]",
+    "description": "Whether any formal bureau record exists (0 for unbanked/thin-file)",
+    "default": 0,
+    "direction": "NEUTRAL"
+  },
+  "credit_history_length": {
+    "type": "int",
+    "unit": "months",
+    "description": "Duration of formal credit relationship in months (0 for unbanked)",
+    "default": 0,
+    "direction": "DECREASES_RISK"
+  }
+}

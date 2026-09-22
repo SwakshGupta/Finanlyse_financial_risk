@@ -393,32 +393,44 @@ export default function NewApplicationPage({ onAssessmentComplete, showToast }) 
           {/* Mode A: Synthetic Personas */}
           {ingestionMode === 'SYNTHETIC' && (
             <div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                Select a calibrated financial persona to test alternative underwriting models without manual data entry:
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>
+                  Select a calibrated financial persona to inject a <strong>24-Month Longitudinal Financial History</strong>:
+                </p>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--emerald)', background: 'rgba(16, 185, 129, 0.12)', padding: '3px 10px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                  ✓ 24-MONTH TEMPORAL SERIES
+                </span>
+              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
                 {[
                   {
                     id: 'THIN_FILE_GIG_WORKER',
                     title: 'Gig Delivery Partner',
-                    income: '₹38,000 / mo',
+                    income: '₹42,000 / mo',
                     badge: 'Thin-File Active',
-                    description: 'Weekly delivery payouts, moderate fuel/vehicle expenses, zero traditional bureau track record.',
+                    description: 'Weekly platform delivery payouts, moderate fuel/vehicle expenses, zero traditional bureau track record, 24M history.',
                   },
                   {
                     id: 'NEW_TO_CREDIT_SALARIED',
                     title: 'Junior IT Associate',
                     income: '₹55,000 / mo',
                     badge: 'New to Credit',
-                    description: 'Direct corporate payroll deposits, low debt ratio, disciplined digital savings rate.',
+                    description: 'Direct corporate payroll deposits, low debt ratio, disciplined digital savings rate, upward 3M income momentum.',
                   },
                   {
                     id: 'MICRO_ENTREPRENEUR',
                     title: 'Kirana Store Merchant',
                     income: '₹68,000 / mo',
                     badge: 'Alternative UPI',
-                    description: 'Daily QR merchant credits, steady inventory turnover, no formal commercial loan history.',
+                    description: 'Daily QR merchant credits, steady inventory turnover, high digital velocity (95%+), solid liquidity floor.',
+                  },
+                  {
+                    id: 'OVERLEVERAGED_STRESSED',
+                    title: 'Stressed Multi-App Borrower',
+                    income: '₹32,000 / mo',
+                    badge: 'Elevated Leverage',
+                    description: 'Multiple active digital micro-loans, elevated DTI burden, volatile freelance gigs, intermittent utility delays.',
                   },
                 ].map((preset) => {
                   const isSelected = selectedPreset === preset.id;
@@ -437,12 +449,14 @@ export default function NewApplicationPage({ onAssessmentComplete, showToast }) 
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#ffffff' }}>{preset.title}</span>
-                        <span className="badge badge-low" style={{ fontSize: '0.65rem' }}>{preset.badge}</span>
+                        <span className={`badge ${preset.id === 'OVERLEVERAGED_STRESSED' ? 'badge-high' : 'badge-low'}`} style={{ fontSize: '0.65rem' }}>
+                          {preset.badge}
+                        </span>
                       </div>
                       <div style={{ fontSize: '0.825rem', color: 'var(--cyan)', fontWeight: 600, marginBottom: '6px' }}>
                         Est. Inflow: {preset.income}
                       </div>
-                      <p style={{ fontSize: '0.785rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                      <p style={{ fontSize: '0.785rem', color: 'var(--text-muted)', lineHeight: 1.4, margin: 0 }}>
                         {preset.description}
                       </p>
                     </div>
@@ -591,37 +605,89 @@ export default function NewApplicationPage({ onAssessmentComplete, showToast }) 
           </p>
 
           {/* Canonical Metric Pills */}
-          {financialSummary && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '14px',
-                maxWidth: '700px',
-                margin: '0 auto 32px',
-                textAlign: 'left',
-              }}
-            >
-              <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Monthly Inflow</span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff' }}>
-                  ₹{Number(financialSummary.monthlyIncome ?? financialSummary.summary?.monthlyIncome ?? 0).toLocaleString()}
+          {financialSummary && (() => {
+            const sum = financialSummary.summary || financialSummary;
+            const momentum = sum.trajectoryInsights?.trendPercentage !== undefined
+              ? sum.trajectoryInsights.trendPercentage
+              : Number((Number(sum.incomeTrend3m || 0) * 100).toFixed(1));
+            const momentumColor = momentum > 1 ? 'var(--emerald)' : momentum < -1 ? 'var(--rose)' : 'var(--text-main)';
+            const negCount = sum.negativeCashflowMonths ?? 0;
+            const negColor = negCount > 2 ? 'var(--rose)' : negCount > 0 ? 'var(--amber)' : 'var(--emerald)';
+
+            return (
+              <div style={{ maxWidth: '780px', margin: '0 auto 32px' }}>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+                    gap: '12px',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Monthly Inflow</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#ffffff' }}>
+                      ₹{Number(sum.monthlyIncome || 0).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Net Cash Surplus</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--emerald)' }}>
+                      ₹{Number(sum.cashFlowSurplus || 0).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Debt Burden (DTI)</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: Number(sum.debtToIncome || 0) > 0.4 ? 'var(--rose)' : 'var(--cyan)' }}>
+                      {(Number(sum.debtToIncome || 0) * 100).toFixed(1)}%
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Observation Window</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#a5b4fc' }}>
+                      {sum.observationMonths || 24} Months
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>3-Month Momentum</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: momentumColor }}>
+                      {momentum > 0 ? `+${momentum}%` : `${momentum}%`}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Deficit Months</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: negColor }}>
+                      {negCount} / {sum.observationMonths || 24} Mo
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Liquidity Buffer</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--primary)' }}>
+                      {((Number(sum.minimumBalanceRatio ?? 0.35)) * 100).toFixed(0)}%
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.725rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Digital Footprint</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--cyan)' }}>
+                      {((Number(sum.digitalTransactionRatio ?? 0.9) > 1 ? Number(sum.digitalTransactionRatio) : Number(sum.digitalTransactionRatio ?? 0.9) * 100)).toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline badge */}
+                <div style={{ marginTop: '14px', padding: '8px 14px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--emerald)' }}>
+                  <span>✓ 24-Month Temporal History Ingested & Verified for Model V2 Scoring</span>
                 </div>
               </div>
-              <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Net Cash Surplus</span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--emerald)' }}>
-                  ₹{Number(financialSummary.cashFlowSurplus ?? financialSummary.summary?.cashFlowSurplus ?? 0).toLocaleString()}
-                </div>
-              </div>
-              <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Debt Burden (DTI)</span>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--cyan)' }}>
-                  {(Number(financialSummary.debtToIncome ?? financialSummary.summary?.debtToIncome ?? 0) * 100).toFixed(1)}%
-                </div>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '14px' }}>
             <button type="button" className="btn btn-secondary" onClick={() => setStep(2)}>

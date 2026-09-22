@@ -79,12 +79,32 @@ Phase 6 — React Frontend & Complete Core User Flow (Completed)
     - Score delta badge (`+X pts`), default probability delta, factor comparison table, and grounded underwriting narrative callout.
   - 64 Jest tests across 7 suites + 17 Pytest tests (81 total automated tests) passing 100%.
 
+- **Model V2 & 24-Month Temporal Financial History Upgrade**:
+  - **Longitudinal Ingestion**: Shifted from static single-month snapshots to 24-month month-by-month temporal histories (2024–2026).
+  - **Feature Catalog V2 (20 Features)**:
+    - Added 5 primary longitudinal dimensions: `minimum_balance_ratio`, `negative_cashflow_months`, `income_trend_3m`, `utility_payment_consistency`, and `digital_transaction_ratio`.
+    - Reworked obligation architecture to strictly isolate living commitments (`non_debt_recurring_obligations`) from debt EMIs (`monthly_emi`), preventing double-counting.
+  - **Model V2 Training & Serialization**:
+    - Trained Logistic Regression V2 on 3,000 synthetic longitudinal profiles across 4 calibrated segments.
+    - Test ROC-AUC: **0.9168**, Accuracy: **83.50%**, F1: **0.7258**, Brier Score: **0.1109**, Overfitting Gap: **0.0169**.
+    - Serialized artifacts: `logistic_regression_v2.0.0.joblib`, `scaler_v2.0.0.joblib`, `feature_catalog_v2.json`, `model_metadata_v2.0.0.json`.
+    - Preserved full backward compatibility with V1 artifacts.
+  - **Frontend Dashboard Visualizations**:
+    - `IncomeTrendCard.jsx`: Pure SVG responsive line chart rendering 24 consecutive months of gross inflow, 3M momentum comparison, and interactive hover tooltips.
+    - `FinancialTrajectoryCard.jsx`: Longitudinal behavioral indicators (3M momentum, deficit months frequency, liquidity floor buffer, utility regularity, digital velocity).
+    - `DataCoverageCard.jsx`: Updated to reflect 24-month temporal observation horizon and `logistic_regression_v2.0.0`.
+    - `NewApplicationPage.jsx`: 4 calibrated presets (`THIN_FILE_GIG_WORKER`, `NEW_TO_CREDIT_SALARIED`, `MICRO_ENTREPRENEUR`, `OVERLEVERAGED_STRESSED`) and Step 3 canonical metrics preview with 24M temporal verification.
+  - **OpenAPI 3.0 Contract**: Updated `financial-risk-assessment-openapi.yaml` with V2 temporal fields in `FinancialSummary` and `RiskDataCoverage`.
+  - **Automated Tests**: 18 Pytest tests + 64 Jest tests passing 100%.
+
+## Current Phase
+Model V2 & 24-Month Temporal Financial History Upgrade (Completed & Verified Locally)
+
 ## Active Work
-- None (Phase 8 completed, ready for Phase 9: Hardening, Testing, Documentation & Containerization)
+- Local multi-service verification and testing
 
 ## Pending Work
-- Phase 9 — Hardening, Testing, Documentation & Containerization
-- Phase 10 — AWS Deployment & Final Delivery
+- Phase 10 — AWS Cloud Deployment & Final Delivery
 
 ## Known Issues
 - None currently blocking.
@@ -97,7 +117,10 @@ Phase 6 — React Frontend & Complete Core User Flow (Completed)
 - Python: 3.13.9 in `ml-service/.venv`
 - Database: PostgreSQL connection pool, migrations 001/002/003, and test mock pool
 - Dev Servers Running:
-  - Frontend: `http://localhost:3000`
+  - Frontend: `http://localhost:3000` (Vite)
+  - Backend API: `http://localhost:4000` (Express)
+  - ML Microservice: `http://localhost:8000` (FastAPI / Model V2)
+
   - Backend: `http://localhost:4000`
   - ML Microservice: `http://localhost:8000`
 

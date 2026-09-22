@@ -27,7 +27,7 @@ export default function DataCoverageCard({ dataCoverage, model }) {
           <div>
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>Data Coverage & Inclusion</h3>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Underwriting inputs and behavioral observation
+              Underwriting inputs and longitudinal observation
             </span>
           </div>
         </div>
@@ -51,8 +51,11 @@ export default function DataCoverageCard({ dataCoverage, model }) {
             <span style={{ fontSize: '0.825rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Calendar size={14} /> Observation Horizon
             </span>
-            <span style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-main)' }}>
-              {dataCoverage?.observationMonths || 6} Months
+            <span style={{ fontSize: '0.825rem', fontWeight: 700, color: 'var(--emerald)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {dataCoverage?.observationMonths || 24} Months
+              <span style={{ fontSize: '0.65rem', background: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                TEMPORAL
+              </span>
             </span>
           </div>
 
@@ -115,15 +118,17 @@ export default function DataCoverageCard({ dataCoverage, model }) {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
             <span style={{ color: 'var(--text-muted)' }}>Model Version</span>
-            <span style={{ fontWeight: 600, color: '#818cf8', fontFamily: 'monospace' }}>{model?.version || 'logistic_regression_v1.0.0'}</span>
+            <span style={{ fontWeight: 600, color: '#818cf8', fontFamily: 'monospace' }}>{model?.version || 'logistic_regression_v2.0.0'}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
             <span style={{ color: 'var(--text-muted)' }}>Feature Catalog</span>
-            <span style={{ fontWeight: 600, color: '#06b6d4', fontFamily: 'monospace' }}>{model?.featureSetVersion || 'feature_set_v1'}</span>
+            <span style={{ fontWeight: 600, color: '#06b6d4', fontFamily: 'monospace' }}>
+              {model?.featureSetVersion ? `${model.featureSetVersion} (20 Features)` : 'feature_set_v2 (20 Features)'}
+            </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
             <span style={{ color: 'var(--text-muted)' }}>Training Baseline</span>
-            <span style={{ fontWeight: 600, color: 'var(--emerald)' }}>Calibrated Financial Cohorts</span>
+            <span style={{ fontWeight: 600, color: 'var(--emerald)' }}>24-Month Temporal Cohorts (v2)</span>
           </div>
 
           <div
@@ -140,7 +145,7 @@ export default function DataCoverageCard({ dataCoverage, model }) {
           >
             <Info size={16} color="var(--primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-              <strong>Fair Lending & Explainability Guarantee:</strong> All numerical risk scores and default probabilities are generated strictly by statistical model weights. No arbitrary or fabricated bureau metrics.
+              <strong>Fair Lending & Explainability Guarantee:</strong> All numerical risk scores and default probabilities are generated strictly by statistical model weights over 24-month longitudinal financial behavior. No arbitrary or fabricated bureau metrics.
             </p>
           </div>
         </div>

@@ -10,7 +10,7 @@ const FEATURE_DEFINITIONS = {
   monthlyIncome: {
     name: 'Monthly Income',
     category: 'CASH_FLOW',
-    description: 'Average monthly credits/earnings detected from verifiable transactions or verified declarations.',
+    description: 'Average monthly credits/earnings detected from verifiable transactions or verified declarations over 24 months.',
     interpretation: 'Higher recurring income demonstrates stronger repayment capacity.',
   },
   monthlyExpenses: {
@@ -70,98 +70,154 @@ const FEATURE_DEFINITIONS = {
   failedPaymentCount: {
     name: 'Failed / Bounced Payments',
     category: 'CREDIT_BEHAVIOR',
-    description: 'Number of bounced debits, insufficient funds notices, or mandate failures over 6 months.',
+    description: 'Number of bounced debits, insufficient funds notices, or mandate failures.',
     interpretation: 'Zero failed payments confirms active cash management discipline.',
   },
+  minimumBalanceRatio: {
+    name: 'Minimum Balance Ratio (Liquidity Floor)',
+    category: 'LIQUIDITY',
+    description: 'Lowest observed balance divided by average monthly income across the 24-month timeline.',
+    interpretation: 'A higher ratio indicates an enduring liquidity floor protecting against sudden overdrafts.',
+  },
+  negativeCashflowMonths: {
+    name: 'Negative Cash-Flow Months',
+    category: 'CASH_FLOW_STRESS',
+    description: 'Count of observed historical months where expenses and debt commitments exceeded total inflows.',
+    interpretation: 'Fewer negative cash-flow months confirms persistent operating solvency over time.',
+  },
+  incomeTrend3m: {
+    name: '3-Month Income Trajectory Trend',
+    category: 'TRAJECTORY',
+    description: 'Trailing percentage change comparing recent 3-month income to earliest observation baseline.',
+    interpretation: 'An expanding or stable trajectory reflects growing earning power and resilience.',
+  },
+  utilityPaymentConsistency: {
+    name: 'Utility Payment Consistency',
+    category: 'PAYMENT_DISCIPLINE',
+    description: 'Proportion of recurring utility, electricity, and telecom invoices settled on or before due date.',
+    interpretation: 'Consistently punctual utility payments demonstrate strong day-to-day payment discipline.',
+  },
+  digitalTransactionRatio: {
+    name: 'Digital Transaction Adoption Ratio',
+    category: 'BEHAVIORAL_METRIC',
+    description: 'Proportion of financial activity processed over traceable digital rails (UPI, cards, net banking).',
+    interpretation: 'Higher digital footprint provides transparent, auditable cash flow verification.',
+  },
+  nonDebtRecurringObligations: {
+    name: 'Non-Debt Recurring Obligations',
+    category: 'CASH_FLOW',
+    description: 'Essential monthly living commitments like utilities, telecom, rent, and subscriptions (strictly excluding loan EMI).',
+    interpretation: 'Lower non-debt fixed overhead preserves discretionary debt service capacity.',
+  },
 };
+
+// Aliases for snake_case feature keys
+FEATURE_DEFINITIONS.minimum_balance_ratio = FEATURE_DEFINITIONS.minimumBalanceRatio;
+FEATURE_DEFINITIONS.negative_cashflow_months = FEATURE_DEFINITIONS.negativeCashflowMonths;
+FEATURE_DEFINITIONS.income_trend_3m = FEATURE_DEFINITIONS.incomeTrend3m;
+FEATURE_DEFINITIONS.utility_payment_consistency = FEATURE_DEFINITIONS.utilityPaymentConsistency;
+FEATURE_DEFINITIONS.digital_transaction_ratio = FEATURE_DEFINITIONS.digitalTransactionRatio;
+FEATURE_DEFINITIONS.non_debt_recurring_obligations = FEATURE_DEFINITIONS.nonDebtRecurringObligations;
+FEATURE_DEFINITIONS.monthly_income = FEATURE_DEFINITIONS.monthlyIncome;
+FEATURE_DEFINITIONS.monthly_expenses = FEATURE_DEFINITIONS.monthlyExpenses;
+FEATURE_DEFINITIONS.monthly_emi = FEATURE_DEFINITIONS.monthlyEmi;
+FEATURE_DEFINITIONS.cash_flow_surplus = FEATURE_DEFINITIONS.cashFlowSurplus;
+FEATURE_DEFINITIONS.debt_to_income = FEATURE_DEFINITIONS.debtToIncome;
+FEATURE_DEFINITIONS.average_balance = FEATURE_DEFINITIONS.averageBalance;
+FEATURE_DEFINITIONS.income_stability = FEATURE_DEFINITIONS.incomeStability;
+FEATURE_DEFINITIONS.expense_volatility = FEATURE_DEFINITIONS.expenseVolatility;
+FEATURE_DEFINITIONS.transaction_regularity = FEATURE_DEFINITIONS.transactionRegularity;
+FEATURE_DEFINITIONS.failed_payment_count = FEATURE_DEFINITIONS.failedPaymentCount;
 
 const RISK_METHODOLOGY = {
   scoreScale: {
     min: 0,
     max: 100,
-    type: 'Alternative Cash-Flow Risk Score',
-    description: 'Higher score signifies lower estimated probability of default and superior cash flow resilience.',
+    type: 'Alternative Cash-Flow Risk Score (Model V2)',
+    description: 'Higher score signifies lower estimated probability of default and superior 24-month cash-flow resilience.',
   },
   riskBands: {
     LOW: {
       range: '75 – 100',
-      description: 'Low repayment risk. High cash surplus, low leverage, consistent inflow history.',
+      description: 'Low repayment risk. Sustained cash surplus, minimal negative months, high liquidity floor.',
       policyGuidance: 'Recommended for standard underwriting approval.',
     },
     MODERATE: {
       range: '50 – 74',
-      description: 'Moderate repayment risk. Balanced budget with manageable obligations.',
+      description: 'Moderate repayment risk. Balanced budget with manageable obligations and adequate buffer.',
       policyGuidance: 'Recommended for conditional underwriting with structured limits or monitoring.',
     },
     HIGH: {
       range: '0 – 49',
-      description: 'Elevated repayment risk. Tight or negative cash margin, elevated DTI, or erratic income.',
+      description: 'Elevated repayment risk. Tight cash margin, recurrent negative months, or high leverage.',
       policyGuidance: 'Requires analyst review, lower credit line, or collateral/guarantor support.',
     },
   },
   governance: {
     traditionalBureauDataUsed: false,
-    fairLendingCompliant: true,
-    authoritativeEngine: 'Scikit-Learn Logistic Regression Baseline',
-    disclaimer: 'Score is strictly derived from verified banking cash flow patterns and cannot be overridden by language models.',
+    alternativeCashFlowFocus: true,
   },
 };
 
-/**
- * Tool declarations in OpenAPI/Gemini function declaration format
- */
-const TOOL_DECLARATIONS = [
+const UNDERWRITING_TOOLS = [
   {
     name: 'getFeatureDefinition',
-    description: 'Lookup the financial definition, category, and underwriting interpretation of an engineered feature.',
+    description: 'Retrieve the objective underwriting definition, metric category, and risk interpretation for a specific financial feature.',
     parameters: {
       type: 'OBJECT',
       properties: {
         featureName: {
           type: 'STRING',
-          description: 'The feature key (e.g. debtToIncome, cashFlowSurplus, incomeStability, savingsRate).',
+          description: 'The exact key of the feature to explain (e.g. cashFlowSurplus, minimumBalanceRatio, incomeTrend3m, utilityPaymentConsistency).',
         },
       },
       required: ['featureName'],
     },
+    execute: async ({ featureName }) => {
+      const def = FEATURE_DEFINITIONS[featureName];
+      if (!def) {
+        return {
+          found: false,
+          error: `Feature '${featureName}' is not defined in the authoritative feature catalog.`,
+          availableFeatures: Object.keys(FEATURE_DEFINITIONS),
+        };
+      }
+      return { found: true, feature: featureName, ...def };
+    },
   },
   {
     name: 'getRiskMethodology',
-    description: 'Retrieve the underwriting governance rules, 0-100 score scale, risk bands, and model documentation.',
+    description: 'Retrieve authoritative scoring scale details, risk band definitions, and policy guidance.',
     parameters: {
       type: 'OBJECT',
       properties: {},
     },
+    execute: async () => RISK_METHODOLOGY,
   },
 ];
 
-/**
- * Dispatcher for executing read-only tools
- */
-function executeTool(toolName, args) {
-  switch (toolName) {
-    case 'getFeatureDefinition': {
-      const def = FEATURE_DEFINITIONS[args?.featureName];
-      if (!def) {
-        return {
-          found: false,
-          featureName: args?.featureName,
-          availableFeatures: Object.keys(FEATURE_DEFINITIONS),
-        };
-      }
-      return { found: true, ...def };
+function executeTool(toolName, args = {}) {
+  if (toolName === 'getFeatureDefinition') {
+    const featureName = args.featureName;
+    const def = FEATURE_DEFINITIONS[featureName];
+    if (!def) {
+      return {
+        found: false,
+        error: `Feature '${featureName}' is not defined in the authoritative feature catalog.`,
+        availableFeatures: Object.keys(FEATURE_DEFINITIONS),
+      };
     }
-    case 'getRiskMethodology': {
-      return RISK_METHODOLOGY;
-    }
-    default:
-      throw new Error(`Unknown or unauthorized tool: ${toolName}`);
+    return { found: true, feature: featureName, ...def };
   }
+  if (toolName === 'getRiskMethodology') {
+    return RISK_METHODOLOGY;
+  }
+  throw new Error(`Unknown or unauthorized tool: '${toolName}'`);
 }
 
 module.exports = {
   FEATURE_DEFINITIONS,
   RISK_METHODOLOGY,
-  TOOL_DECLARATIONS,
+  UNDERWRITING_TOOLS,
   executeTool,
 };

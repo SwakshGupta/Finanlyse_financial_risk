@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 import ScoreGauge from '../components/ScoreGauge';
 import RiskFactorCard from '../components/RiskFactorCard';
 import DataCoverageCard from '../components/DataCoverageCard';
 import AIExplanationCard from '../components/AIExplanationCard';
 import AssessmentChatDrawer from '../components/AssessmentChatDrawer';
 import WhatIfSimulator from '../components/WhatIfSimulator';
+import FinancialTrajectoryCard from '../components/FinancialTrajectoryCard';
 import { ArrowLeft, CheckCircle, AlertTriangle, AlertCircle, PlusCircle, Layers, FileText } from 'lucide-react';
 
 export default function AssessmentDashboardPage({ assessment, onNewAssessment, onViewApplications, showToast }) {
@@ -34,6 +36,19 @@ export default function AssessmentDashboardPage({ assessment, onNewAssessment, o
     dataCoverage,
     assessedAt,
   } = assessment;
+
+  // Defensive load of financial summary if not directly embedded
+  const [financialSummary, setFinancialSummary] = useState(assessment.financialSummary || null);
+
+  useEffect(() => {
+    if (assessment.financialSummary) {
+      setFinancialSummary(assessment.financialSummary);
+    } else if (applicationId) {
+      api.getFinancialSummary(applicationId)
+        .then((res) => setFinancialSummary(res.summary || res))
+        .catch((err) => console.warn('Could not load financial summary:', err.message));
+    }
+  }, [applicationId, assessment.financialSummary]);
 
   // Determine recommendation card based on Risk Band
   let recTitle = 'Recommended for Underwriting Approval';
@@ -165,11 +180,11 @@ export default function AssessmentDashboardPage({ assessment, onNewAssessment, o
                 Alternative Scoring Model
               </div>
               <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px' }}>
-                {model?.name || 'Logistic Regression Alternative Risk Baseline'}
+                {model?.name || 'Logistic Regression 24-Month Temporal Risk Model'}
               </div>
             </div>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818cf8', fontFamily: 'monospace' }}>
-              {model?.version || 'v1.0.0'}
+              {model?.version || 'v2.0.0'}
             </span>
           </div>
         </div>
@@ -180,6 +195,12 @@ export default function AssessmentDashboardPage({ assessment, onNewAssessment, o
         applicationId={applicationId}
         initialExplanation={assessment.explanation}
         showToast={showToast}
+      />
+
+      {/* Financial Trajectory & Behavioral Health Indicators */}
+      <FinancialTrajectoryCard
+        financialSummary={financialSummary || {}}
+        trajectoryInsights={financialSummary?.trajectoryInsights || {}}
       />
 
       {/* Phase 8: Interactive What-If Risk Scenario Simulator */}

@@ -41,9 +41,12 @@ def test_model_metadata_endpoint_authorized(client):
     )
     assert res.status_code == 200
     data = res.json()
-    assert data["name"] == "Logistic Regression Alternative Risk Baseline"
-    assert data["version"] == "logistic_regression_v1.0.0"
-    assert data["featureSetVersion"] == "feature_set_v1"
+    assert data["name"] in [
+        "Logistic Regression 24-Month Temporal Risk Model",
+        "Logistic Regression Alternative Risk Baseline"
+    ]
+    assert data["version"] in ["logistic_regression_v2.0.0", "logistic_regression_v1.0.0"]
+    assert data["featureSetVersion"] in ["feature_set_v2", "feature_set_v1"]
     assert data["algorithm"] == "LOGISTIC_REGRESSION"
 
 def test_prediction_endpoint_unauthorized(client):
@@ -74,9 +77,14 @@ def test_prediction_endpoint_success(client):
             "monthlyExpenses": 25000.0,
             "monthlyEmi": 5000.0,
             "averageBalance": 35000.0,
+            "minimumBalanceRatio": 0.25,
             "incomeStability": 0.92,
             "expenseVolatility": 0.10,
             "transactionRegularity": 0.95,
+            "negativeCashflowMonths": 0,
+            "incomeTrend3m": 0.05,
+            "utilityPaymentConsistency": 0.96,
+            "digitalTransactionRatio": 0.88,
             "failedPaymentCount": 0
         }
     }

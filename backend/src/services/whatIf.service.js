@@ -20,6 +20,7 @@ const ALLOWED_OVERRIDE_FIELDS = new Set([
   'expenseVolatility',
   'transactionRegularity',
   'failedPaymentCount',
+  'nonDebtRecurringObligations',
 ]);
 
 class WhatIfService {
@@ -74,7 +75,7 @@ class WhatIfService {
     const transactions = await financialRepository.getTransactions(applicationId);
     const baselineSummary = finProfile ? deriveFinancialSummary(finProfile, transactions) : {};
 
-    // 5. Construct baseline feature vector
+    // 5. Construct baseline feature vector (Feature Set V2)
     const baselineFeatures = {
       monthlyIncome: baselineSummary.monthlyIncome || 0,
       monthlyExpenses: baselineSummary.monthlyExpenses || 0,
@@ -84,12 +85,19 @@ class WhatIfService {
       cashFlowSurplus: baselineSummary.cashFlowSurplus || 0,
       debtToIncome: baselineSummary.debtToIncome || 0,
       savingsRate: baselineSummary.savingsRate || 0,
-      incomeStability: baselineSummary.incomeStability ?? 0.8,
-      expenseVolatility: baselineSummary.expenseVolatility ?? 0.2,
-      transactionRegularity: baselineSummary.transactionRegularity ?? 0.85,
+      minimumBalanceRatio: baselineSummary.minimumBalanceRatio ?? 0.20,
+      incomeStability: baselineSummary.incomeStability ?? 0.85,
+      expenseVolatility: baselineSummary.expenseVolatility ?? 0.15,
+      transactionRegularity: baselineSummary.transactionRegularity ?? 0.88,
+      negativeCashflowMonths: baselineSummary.negativeCashflowMonths ?? 0,
+      incomeTrend3m: baselineSummary.incomeTrend3m ?? 0.02,
+      utilityPaymentConsistency: baselineSummary.utilityPaymentConsistency ?? 0.90,
+      digitalTransactionRatio: baselineSummary.digitalTransactionRatio ?? 0.85,
       failedPaymentCount: baselineSummary.failedPaymentCount || 0,
-      recurringObligationAmount: baselineSummary.monthlyEmi || 0,
-      observationMonths: 6,
+      nonDebtRecurringObligations: baselineSummary.nonDebtRecurringObligations || 4000,
+      recurringObligationAmount: baselineSummary.nonDebtRecurringObligations || 4000,
+      existingDebtAmount: baselineSummary.existingDebtAmount || 0,
+      observationMonths: baselineSummary.observationMonths || 24,
       bureauHistoryAvailable: false,
       creditHistoryLengthMonths: 0,
     };
@@ -104,7 +112,19 @@ class WhatIfService {
     scenarioFeatures.cashFlowSurplus = income - expenses - emi;
     scenarioFeatures.debtToIncome = income > 0 ? parseFloat((emi / income).toFixed(4)) : 0;
     scenarioFeatures.savingsRate = income > 0 ? parseFloat((Math.max(0, scenarioFeatures.cashFlowSurplus) / income).toFixed(4)) : 0;
-    scenarioFeatures.recurringObligationAmount = emi;
+
+    // Recalculate minimum balance ratio dynamically if average balance or income changed
+    if (income > 0) {
+      const estimatedMinBal = scenarioFeatures.averageBalance * 0.40;
+      scenarioFeatures.minimumBalanceRatio = parseFloat((estimatedMinBal / income).toFixed(4));
+    }
+
+    // Recalculate negative cash-flow months: if surplus improves to positive, negative months drop
+    if (scenarioFeatures.cashFlowSurplus >= 0 && baselineFeatures.cashFlowSurplus < 0) {
+      scenarioFeatures.negativeCashflowMonths = Math.max(0, baselineFeatures.negativeCashflowMonths - 1);
+    } else if (scenarioFeatures.cashFlowSurplus < 0 && baselineFeatures.cashFlowSurplus >= 0) {
+      scenarioFeatures.negativeCashflowMonths = baselineFeatures.negativeCashflowMonths + 1;
+    }
 
     // 7. Track changed factors
     const changedFactors = [];
@@ -151,72 +171,74 @@ class WhatIfService {
       riskBand: scenarioMLResult.riskBand,
       modelMetadata: scenarioMLResult.model,
       factors: scenarioMLResult.factors,
-      dataCoverage: baselineAssessment.data_coverage || { observationMonths: 6 },
-      explanationStatus: 'GENERATED',
+      dataCoverage: {
+        financialDataAvailable: true,
+        bureauDataAvailable: false,
+        observationMonths: baselineSummary.observationMonths || 24,
+        isScenarioSimulation: true,
+        scenarioId,
+      },
+      explanationStatus: 'NOT_GENERATED',
       assessmentType: 'SCENARIO',
     });
 
-    // 10. Generate grounded comparative explanation
-    const baselineScore = baselineAssessment.score ?? baselineAssessment.riskScore;
-    const baselineProb = parseFloat(baselineAssessment.default_probability ?? baselineAssessment.defaultProbability);
-    const scenarioScore = scenarioMLResult.riskScore;
-    const scenarioProb = scenarioMLResult.defaultProbability;
-    const scoreDiff = scenarioScore - baselineScore;
-    const probDiffPercent = ((scenarioProb - baselineProb) * 100).toFixed(1);
+    // 10. Generate Grounded AI What-If Narrative via LLMFactory
+    let scenarioNarrative = '';
+    const scoreDelta = scenarioMLResult.riskScore - baselineAssessment.score;
+    const deltaSign = scoreDelta > 0 ? '+' : '';
 
-    const explanation = this._generateScenarioExplanation({
-      baselineScore,
-      scenarioScore,
-      scoreDiff,
-      probDiffPercent,
-      changedFactors,
-      scenarioRiskBand: scenarioMLResult.riskBand,
-    });
+    try {
+      const provider = LLMFactory.getProvider();
+      const prompt = `You are a financial credit risk underwriting engine.
+Explain the impact of the following counterfactual what-if scenario for loan application ${applicationId}:
+- Baseline Risk Score: ${baselineAssessment.score} (${baselineAssessment.risk_band} risk, default probability: ${(Number(baselineAssessment.default_probability) * 100).toFixed(1)}%)
+- Projected Risk Score: ${scenarioMLResult.riskScore} (${scenarioMLResult.riskBand} risk, default probability: ${(scenarioMLResult.defaultProbability * 100).toFixed(1)}%)
+- Score Delta: ${deltaSign}${scoreDelta} points
+- Primary Changes Applied:
+${changedFactors.map((c) => `  * ${c.feature}: from ${c.before} to ${c.after}`).join('\n')}
+
+Provide a concise 2-3 sentence grounded explanation of why the score shifted and the financial stability implication. Do not hallucinate external factors.`;
+
+      const response = await provider.generateText(prompt);
+      scenarioNarrative = response.text || '';
+    } catch {
+      // Deterministic fallback
+      if (scoreDelta > 0) {
+        scenarioNarrative = `Adjusting your financial profile improves your projected score by +${scoreDelta} points (to ${scenarioMLResult.riskScore}/100) by expanding your disposable cash-flow buffer and lowering credit strain.`;
+      } else if (scoreDelta < 0) {
+        scenarioNarrative = `This scenario lowers the projected score by ${scoreDelta} points (to ${scenarioMLResult.riskScore}/100) due to higher financial obligations relative to available cash reserves.`;
+      } else {
+        scenarioNarrative = `The simulated adjustments maintain your baseline score at ${scenarioMLResult.riskScore}/100, leaving your overall risk tier in the ${scenarioMLResult.riskBand} band.`;
+      }
+    }
 
     return {
       scenarioId,
+      applicationId,
       baseline: {
-        riskScore: baselineScore,
-        defaultProbability: baselineProb,
-        riskBand: baselineAssessment.risk_band ?? baselineAssessment.riskBand,
+        riskScore: baselineAssessment.score,
+        defaultProbability: parseFloat(baselineAssessment.default_probability),
+        riskBand: baselineAssessment.risk_band,
       },
       scenario: {
-        riskScore: scenarioScore,
-        defaultProbability: scenarioProb,
+        riskScore: scenarioMLResult.riskScore,
+        defaultProbability: scenarioMLResult.defaultProbability,
         riskBand: scenarioMLResult.riskBand,
+        factors: scenarioMLResult.factors,
       },
+      baselineScore: baselineAssessment.score,
+      projectedScore: scenarioMLResult.riskScore,
+      scoreDelta,
+      baselineRiskBand: baselineAssessment.risk_band,
+      projectedRiskBand: scenarioMLResult.riskBand,
+      baselineDefaultProbability: parseFloat(baselineAssessment.default_probability),
+      projectedDefaultProbability: scenarioMLResult.defaultProbability,
       changedFactors,
-      explanation,
+      projectedFactors: scenarioMLResult.factors,
+      explanation: scenarioNarrative,
+      scenarioNarrative,
+      simulatedAt: new Date().toISOString(),
     };
-  }
-
-  _generateScenarioExplanation({ baselineScore, scenarioScore, scoreDiff, probDiffPercent, changedFactors, scenarioRiskBand }) {
-    const direction = scoreDiff > 0 ? 'improved' : scoreDiff < 0 ? 'weakened' : 'remained unchanged';
-    const sign = scoreDiff > 0 ? `+${scoreDiff}` : `${scoreDiff}`;
-
-    let narrative = `Under this simulated scenario, the Alternative Risk Score ${direction} from **${baselineScore}** to **${scenarioScore}/100** (${sign} points, ${scenarioRiskBand} Risk), with estimated default probability shifting by **${probDiffPercent}%**.`;
-
-    const changes = changedFactors.map((c) => {
-      let unit = '';
-      if (c.feature.toLowerCase().includes('income') || c.feature.toLowerCase().includes('surplus') || c.feature.toLowerCase().includes('emi') || c.feature.toLowerCase().includes('balance')) {
-        unit = '₹';
-      }
-      return `**${c.feature}** changed from ${unit}${c.before} to ${unit}${c.after}`;
-    });
-
-    if (changes.length > 0) {
-      narrative += ` Key drivers: ${changes.join(', ')}.`;
-    }
-
-    if (scoreDiff > 0) {
-      narrative += ' The reduction in debt commitments or expansion in disposable cash surplus meaningfully strengthens repayment resilience.';
-    } else if (scoreDiff < 0) {
-      narrative += ' The higher debt burden or reduced cash surplus compresses the liquidity buffer, elevating default vulnerability.';
-    } else {
-      narrative += ' The adjustments produced negligible variation in model feature weights.';
-    }
-
-    return narrative;
   }
 }
 
