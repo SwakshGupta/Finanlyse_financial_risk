@@ -219,3 +219,4 @@ npm --prefix frontend run build
 ## 8. License & Responsible AI Disclaimer
 
 This project is developed for evaluation and demonstrative purposes under the AI-Powered Financial Inclusion initiative. It must not be deployed as an autonomous lending approval system without human underwriting oversight, adverse-action compliance, and regulatory review.
+
