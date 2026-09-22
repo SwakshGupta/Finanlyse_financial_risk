@@ -135,12 +135,41 @@ Displays 3-Month Momentum, Deficit Months frequency out of 24 months, Liquidity 
 
 ## 5. Local Setup & Execution Guide
 
-### Prerequisites
+### Option A: Quickstart with Docker Compose (Recommended)
+
+Run the entire backend, ML microservice, and PostgreSQL database with a single command:
+
+```bash
+# 1. Build container images
+docker compose build
+
+# 2. Start PostgreSQL, ML microservice, and backend in background
+docker compose up -d
+
+# 3. Check health and service status
+docker compose ps
+
+# 4. Start frontend development server on host
+npm --prefix frontend install
+npm --prefix frontend run dev
+```
+Open `http://localhost:3000`. The Vite server automatically proxies API requests to the containerized backend at `http://localhost:4000`.
+
+To stop the containers:
+```bash
+docker compose down
+```
+
+---
+
+### Option B: Native Host Setup (Manual)
+
+#### Prerequisites
 - **Node.js**: v20+
 - **Python**: v3.11+
 - **PostgreSQL**: v15+ (local brew or service)
 
-### Step 1: Clone and Configure Environment
+#### Step 1: Clone and Configure Environment
 ```bash
 git clone https://github.com/SwakshGupta/Finanlyse_financial_risk.git
 cd Finanlyse_financial_risk
@@ -151,7 +180,7 @@ cp .env.example backend/.env
 ```
 Update `.env` with your PostgreSQL database credentials and optional `GEMINI_API_KEY`. (If `GEMINI_API_KEY` is not provided, the platform automatically utilizes a deterministic offline rule-based fallback).
 
-### Step 2: Initialize Database
+#### Step 2: Initialize Database
 ```bash
 # Ensure finalyse_dev database exists in PostgreSQL
 psql -d postgres -c "CREATE DATABASE finalyse_dev;"
@@ -160,7 +189,7 @@ psql -d postgres -c "CREATE DATABASE finalyse_dev;"
 node backend/scripts/runMigrations.js
 ```
 
-### Step 3: Start Services Locally
+#### Step 3: Start Services Locally
 
 **Terminal 1 — Python ML Microservice (Port 8000):**
 ```bash

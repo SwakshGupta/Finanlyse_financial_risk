@@ -38,6 +38,23 @@ def root_health():
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
     }
 
+# Root-level readiness probe for container orchestrators (ECS / Docker Compose)
+@app.get("/ready")
+def root_readiness():
+    from fastapi import HTTPException, status
+    risk_model = getattr(app.state, "risk_model", None)
+    if risk_model is None or risk_model.model is None or risk_model.scaler is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Model artifacts are not loaded"
+        )
+    return {
+        "status": "READY",
+        "model_version": risk_model.model_version,
+        "feature_set_version": risk_model.feature_set_version,
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }
+
 # Mount internal inference router
 app.include_router(internal_router)
 

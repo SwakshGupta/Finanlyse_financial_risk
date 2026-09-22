@@ -3,134 +3,112 @@
 ## Project Goal
 Build a complete, explainable, secure, locally runnable, and AWS-deployable dynamic financial-risk assessment platform for thin-file, new-to-credit, and underserved applicants. The system transforms consented financial behaviour into an Alternative Risk Score, Estimated Default Probability, Risk Band, Risk Drivers, and Data Coverage, paired with an interpretable, provider-agnostic LLM explanation layer (Gemini).
 
-## Current Phase
-Phase 6 — React Frontend & Complete Core User Flow (Completed)
+## Current Status Overview
+* **Phase 9 — Hardening, Testing, Containerization & Local Validation**: **COMPLETE** (100% verified on Docker Compose)
+* **Phase 10 — AWS Cloud Deployment (ap-south-1 Mumbai)**: **DEFERRED / NOT DEPLOYED** (Deferred for this project submission due to strict time constraints; all production task definitions, build specs, and container infrastructure are fully prepared and verified locally).
 
-## Completed Work
-- **Phase 1 — Project Foundation & Engineering Setup**:
-  - Master documents verified (`Antigravity_Master_Agent_Prompt_Definitive.md`, `Architecture.md`, `financial-risk-assessment-openapi.yaml`).
-  - Git repository initialized on `main` branch.
-  - Comprehensive `.gitignore`, `.env.example`, root `package.json`, root `README.md`.
-  - Scaffolding for `backend/`, `frontend/`, `ml-service/`, `data/`, `tests/`.
-- **Phase 2 — Backend, Database & Security Foundation**:
-  - PostgreSQL database connection pool (`pg.Pool`) in `backend/src/config/database.js`.
-  - Relational schema migrations (`001_initial_schema.sql`).
-  - Request ID tracing (`X-Request-Id`) and OpenAPI-compliant error formatting.
-  - JWT authentication and role-based authorization (`APPLICANT`, `ANALYST`, `ADMIN`).
-- **Phase 3 — Financial Data Ingestion & Canonical Data Model**:
-  - Canonical financial schema definitions and financial ratio calculator (`backend/src/modules/financial/canonical.schema.js`).
-  - Source Adapters (ManualInput, SyntheticData, CsvTransaction).
-  - Repositories & Services (`ApplicationRepository`, `FinancialRepository`, `ApplicationService`, `FinancialService`).
-- **Phase 4 — Feature Engineering & ML Pipeline**:
-  - Authoritative Feature Catalog `feature_set_v1` (`ml-service/app/features/catalog.py`).
-  - Preprocessing pipeline with imputation, `StandardScaler`, and linear log-odds feature attribution.
-  - Calibrated synthetic training dataset generator (`data/synthetic/training_dataset_v1.csv`).
-  - Baseline Logistic Regression training pipeline yielding **Test ROC-AUC: 0.9496**, **Accuracy: 84.00%**, **Brier Score: 0.0905**.
-  - Serialized model artifacts in `ml-service/artifacts/`.
-- **Phase 5 — ML Service & Backend Integration**:
-  - FastAPI Pydantic schemas in `ml-service/app/schemas/prediction.py`.
-  - FastAPI internal router in `ml-service/app/api/endpoints.py` secured by `X-Internal-API-Key`.
-  - Node.js `MLClient` in `backend/src/integrations/ml/mlClient.js`.
-  - Schema alignment migration `002_align_risk_assessments_schema.sql`.
-  - `AssessmentRepository` and `AssessmentService` persisting results to PostgreSQL and setting status to `ASSESSED`.
-  - Endpoints `POST /api/v1/applications/:applicationId/assess` and `GET /api/v1/applications/:applicationId/assessment`.
-- **Phase 6 — React Frontend & Complete Core User Flow**:
-  - Built with **Vite + React** and bespoke **Vanilla CSS design system** with dark obsidian canvas, HSL color tokens, glassmorphism (`backdrop-filter: blur(16px)`), glowing accents, and micro-interactions.
-  - Authentication UI (`AuthPage.jsx`) with Login and Register screens, role switching (`APPLICANT` vs `ANALYST`), and 1-click demo persona quick-fills.
-  - Multi-step Intake Wizard (`NewApplicationPage.jsx`):
-    - Step 1: Personal profile & mandatory fair lending consent toggle.
-    - Step 2: Financial ingestion modes: 1-click Synthetic Personas (*Thin-File Gig Worker*, *New-to-Credit Salaried*, *Micro-Entrepreneur*), manual statement input, or bank statement CSV upload.
-    - Step 3: Canonical metrics preview & ML assessment trigger.
-  - Dynamic Risk Assessment Dashboard (`AssessmentDashboardPage.jsx`):
-    - 0–100 Alternative Risk Score SVG circular arc gauge (`ScoreGauge.jsx`).
-    - Estimated default probability (%) and Risk Band pills (`LOW`, `MODERATE`, `HIGH`).
-    - Explainable model drivers card (`RiskFactorCard.jsx`) with positive/negative signed contribution magnitude bars.
-    - Data coverage & regulatory governance cards (`DataCoverageCard.jsx`).
-  - Applications List & Queue (`ApplicationsListPage.jsx`) supporting search and review.
-  - API Client layer (`src/services/api.js`) and Auth State Context (`AuthContext.jsx`) with live backend health probing.
-  - 42 Jest tests + 17 Pytest tests passing (59 total automated tests). Production Vite bundle built successfully.
-- **Phase 7 — Explainability Orchestrator, Gemini & Tool Calling**:
-  - Provider-agnostic LLM interface in `backend/src/integrations/llm/provider.interface.js` supporting text, structured JSON, and tool-augmented generation.
-  - Google Gemini provider in `gemini.provider.js` using `gemini-3.1-flash-lite` with schema enforcement and tool dispatching.
-  - Offline `MockProvider` in `mock.provider.js` and `LLMFactory` for seamless zero-latency test execution.
-  - Versioned prompt template `risk-explanation-v1` enforcing strict grounding and prohibiting score alteration or bureau hallucinations.
-  - Read-only underwriting tools in `catalog.tools.js`: `getFeatureDefinition` and `getRiskMethodology`.
-  - Structured output validation schema in `schemas/explanation.schema.js`.
-  - Deterministic safety fallback generator in `fallback.generator.js` with automatic failover if API key is invalid, rate-limited, or times out.
-  - PostgreSQL persistence in `llm_explanations` table via `explanation.repository.js` and `explanation.service.js`.
-  - REST API endpoints `GET /api/v1/applications/:applicationId/explanation` and `POST /api/v1/applications/:applicationId/explanation`.
-  - Frontend interactive component `AIExplanationCard.jsx` embedded in the risk assessment dashboard with real-time regeneration controls.
-  - 53 Jest tests + 17 Pytest tests (70 total automated tests) passing 100%.
+---
 
-- **Phase 8 — What-If Analysis, Counterfactual Simulations & Role-Aware Conversational AI**:
-  - What-If Engine (`whatIf.service.js`, `whatIf.controller.js`, `POST /api/v1/applications/:applicationId/what-if`).
-  - Baseline Preservation Invariant: Authoritative assessments (`assessment_type = 'BASELINE'`) are never overwritten or shadowed by scenario simulations (`assessment_type = 'SCENARIO'`).
-  - Strict Override Validation: Rejects invalid or negative parameters with 400 Validation Error.
-  - Deterministic Feature Recalculation: Accurately recomputes `cashFlowSurplus`, `debtToIncome`, and `savingsRate`.
-  - ML Microservice Re-inference: Dispatches scenario feature vectors to FastAPI microservice for calibrated re-scoring.
-  - Role-Aware Conversational AI Assistant:
-    - Underwriter / Analyst Persona: Addressed as "Analyst" or "Underwriter" (never as applicant Arjun). Provides direct, objective, concise, and blunt underwriting evaluations regarding debt serviceability, cash-flow coverage, and covenant structures without borrower coaching.
-    - Borrower / Applicant Persona: Addressed warmly by name. Receives gentle, encouraging, empathetic, and constructive coaching guidance without cold or blunt rejection language.
-    - In-drawer persona toggle button allowing instant testing and perspective switching.
-  - Frontend Interactive What-If Simulator (`WhatIfSimulator.jsx`):
-    - Real-time parameter sliders for Monthly Income, Living Expenses, Committed Debt EMI, and Average Daily Balance.
-    - Quick scenario preset buttons (+20% Gig Inflows, -50% Debt EMI, -15% Expenses, +₹25k Buffer).
-    - Live projected ratio previews before simulation.
-    - Score delta badge (`+X pts`), default probability delta, factor comparison table, and grounded underwriting narrative callout.
-  - 64 Jest tests across 7 suites + 17 Pytest tests (81 total automated tests) passing 100%.
+## Phase Execution Summary
 
-- **Model V2 & 24-Month Temporal Financial History Upgrade**:
-  - **Longitudinal Ingestion**: Shifted from static single-month snapshots to 24-month month-by-month temporal histories (2024–2026).
-  - **Feature Catalog V2 (20 Features)**:
-    - Added 5 primary longitudinal dimensions: `minimum_balance_ratio`, `negative_cashflow_months`, `income_trend_3m`, `utility_payment_consistency`, and `digital_transaction_ratio`.
-    - Reworked obligation architecture to strictly isolate living commitments (`non_debt_recurring_obligations`) from debt EMIs (`monthly_emi`), preventing double-counting.
-  - **Model V2 Training & Serialization**:
-    - Trained Logistic Regression V2 on 3,000 synthetic longitudinal profiles across 4 calibrated segments.
-    - Test ROC-AUC: **0.9168**, Accuracy: **83.50%**, F1: **0.7258**, Brier Score: **0.1109**, Overfitting Gap: **0.0169**.
-    - Serialized artifacts: `logistic_regression_v2.0.0.joblib`, `scaler_v2.0.0.joblib`, `feature_catalog_v2.json`, `model_metadata_v2.0.0.json`.
-    - Preserved full backward compatibility with V1 artifacts.
-  - **Frontend Dashboard Visualizations**:
-    - `IncomeTrendCard.jsx`: Pure SVG responsive line chart rendering 24 consecutive months of gross inflow, 3M momentum comparison, and interactive hover tooltips.
-    - `FinancialTrajectoryCard.jsx`: Longitudinal behavioral indicators (3M momentum, deficit months frequency, liquidity floor buffer, utility regularity, digital velocity).
-    - `DataCoverageCard.jsx`: Updated to reflect 24-month temporal observation horizon and `logistic_regression_v2.0.0`.
-    - `NewApplicationPage.jsx`: 4 calibrated presets (`THIN_FILE_GIG_WORKER`, `NEW_TO_CREDIT_SALARIED`, `MICRO_ENTREPRENEUR`, `OVERLEVERAGED_STRESSED`) and Step 3 canonical metrics preview with 24M temporal verification.
-  - **OpenAPI 3.0 Contract**: Updated `financial-risk-assessment-openapi.yaml` with V2 temporal fields in `FinancialSummary` and `RiskDataCoverage`.
-  - **Automated Tests**: 18 Pytest tests + 64 Jest tests passing 100%.
+### Phase 1 — Project Foundation & Engineering Setup (COMPLETED)
+- Master specifications verified (`Architecture.md`, `financial-risk-assessment-openapi.yaml`).
+- Git repository initialized on `main` branch.
+- Comprehensive `.gitignore`, `.env.example`, root `package.json`, root `README.md`.
+- Scaffolding for `backend/`, `frontend/`, `ml-service/`, `data/`, `tests/`.
 
-## Current Phase
-Model V2 & 24-Month Temporal Financial History Upgrade (Completed & Verified Locally)
+### Phase 2 — Backend, Database & Security Foundation (COMPLETED)
+- PostgreSQL database connection pool (`pg.Pool`) in `backend/src/config/database.js`.
+- Relational schema migrations (`001_initial_schema.sql`).
+- Request ID tracing (`X-Request-Id`) and OpenAPI-compliant error formatting.
+- JWT authentication and role-based authorization (`APPLICANT`, `ANALYST`, `ADMIN`).
 
-## Active Work
-- Local multi-service verification and testing
+### Phase 3 — Financial Data Ingestion & Canonical Data Model (COMPLETED)
+- Canonical financial schema definitions and financial ratio calculator (`backend/src/modules/financial/canonical.schema.js`).
+- Source Adapters (ManualInput, SyntheticData, CsvTransaction).
+- Repositories & Services (`ApplicationRepository`, `FinancialRepository`, `ApplicationService`, `FinancialService`).
 
-## Pending Work
-- Phase 10 — AWS Cloud Deployment & Final Delivery
+### Phase 4 — Feature Engineering & ML Pipeline (COMPLETED)
+- Authoritative Feature Catalog `feature_set_v1` (`ml-service/app/features/catalog.py`).
+- Preprocessing pipeline with imputation, `StandardScaler`, and linear log-odds feature attribution.
+- Baseline Logistic Regression training pipeline yielding **Test ROC-AUC: 0.9496**, **Accuracy: 84.00%**, **Brier Score: 0.0905**.
+- Serialized model artifacts in `ml-service/artifacts/`.
 
-## Known Issues
-- None currently blocking.
+### Phase 5 — ML Service & Backend Integration (COMPLETED)
+- FastAPI Pydantic schemas in `ml-service/app/schemas/prediction.py`.
+- FastAPI internal router in `ml-service/app/api/endpoints.py` secured by `X-Internal-API-Key`.
+- Node.js `MLClient` in `backend/src/integrations/ml/mlClient.js`.
+- Schema alignment migration `002_align_risk_assessments_schema.sql`.
+- `AssessmentRepository` and `AssessmentService` persisting results to PostgreSQL and setting status to `ASSESSED`.
+- Endpoints `POST /api/v1/applications/:applicationId/assess` and `GET /api/v1/applications/:applicationId/assessment`.
 
-## Environment Status
-- OS: macOS (Darwin Apple Silicon)
-- Working Directory: `/Users/swakshgupta/Desktop/Finalyse`
-- Node.js: v24.7.0
-- npm: 11.5.1
-- Python: 3.13.9 in `ml-service/.venv`
-- Database: PostgreSQL connection pool, migrations 001/002/003, and test mock pool
-- Dev Servers Running:
-  - Frontend: `http://localhost:3000` (Vite)
-  - Backend API: `http://localhost:4000` (Express)
-  - ML Microservice: `http://localhost:8000` (FastAPI / Model V2)
+### Phase 6 — React Frontend & Complete Core User Flow (COMPLETED)
+- Built with **Vite + React** and bespoke **Vanilla CSS design system** with dark obsidian canvas, HSL color tokens, glassmorphism (`backdrop-filter: blur(16px)`), glowing accents, and micro-interactions.
+- Authentication UI (`AuthPage.jsx`) with Login and Register screens, role switching (`APPLICANT` vs `ANALYST`), and 1-click demo persona quick-fills.
+- Multi-step Intake Wizard (`NewApplicationPage.jsx`): Profile, fair-lending consent, financial ingestion, and metrics verification.
+- Dynamic Risk Assessment Dashboard (`AssessmentDashboardPage.jsx`) with SVG Score Gauge, default probability, risk band badges, and risk driver cards.
 
-  - Backend: `http://localhost:4000`
-  - ML Microservice: `http://localhost:8000`
+### Phase 7 — Explainability Orchestrator, Gemini & Tool Calling (COMPLETED)
+- Provider-agnostic LLM interface in `backend/src/integrations/llm/provider.interface.js`.
+- Google Gemini provider using `gemini-3.1-flash-lite` with schema enforcement and tool dispatching.
+- Versioned prompt template `risk-explanation-v1` strictly preserving ML numerical authority.
+- Deterministic safety fallback generator with automatic failover if API key is rate-limited or unavailable.
 
-## Testing Status
-- Backend Test Suite (Jest + Supertest): 7 suites, 64 tests passed
-- ML Service Test Suite (Pytest): 4 suites, 17 tests passed
-- Total automated tests: 81 passed (100% passing)
+### Phase 8 — What-If Counterfactuals & Conversational AI (COMPLETED)
+- What-If Engine (`POST /api/v1/applications/:applicationId/what-if`) with baseline immutability invariant.
+- Interactive simulator with parameter sliders, quick presets, and live delta calculations.
+- Role-aware AI assistant drawer supporting Underwriter and Applicant perspectives.
 
-## Deployment Status
-- Local-first prototype running on localhost:3000 with live backend, ML microservice, Gemini explainability, and interactive what-if counterfactual scenario laboratory.
+### Model V2 & 24-Month Temporal Upgrade (COMPLETED)
+- 20-feature vector with 5 longitudinal dimensions (`minimum_balance_ratio`, `negative_cashflow_months`, `income_trend_3m`, `utility_payment_consistency`, `digital_transaction_ratio`).
+- Logistic Regression V2 trained on 3,000 synthetic longitudinal profiles (**Test ROC-AUC: 0.9168**).
+- Pure SVG 24-month gross inflow trajectory chart (`IncomeTrendCard.jsx`).
 
-## Next Recommended Task
-- Proceed to **Phase 9 — Hardening, Testing, Documentation & Containerization**.
+### Phase 9 — Hardening, Containerization & Local Validation (COMPLETED)
+- **Backend Hardening**: Added startup database connection retry loop with exponential backoff and graceful shutdown handlers (`SIGTERM`/`SIGINT`) closing the pool cleanly.
+- **ML Microservice Hardening**: Added root-level `/health` and `/ready` probes reporting model load state, active model version, and feature set version.
+- **Production Dockerfiles**:
+  - `backend/Dockerfile`: Multi-stage Alpine Node 20 build running as unprivileged `node` user with production dependencies only and built-in health probe.
+  - `ml-service/Dockerfile`: Python 3.11-slim build running as unprivileged `appuser` user with serialized model artifacts preloaded and curl health probe.
+- **Docker Compose Topology**: Topologically links `postgres:16-alpine` (`5433:5432`), `ml-service` (`8000:8000`), and `backend` (`4000:4000`) over bridge network `finalyse-network` with health-dependent startup.
+- **Full Containerized E2E Verification**:
+  1. Analyst login via JWT issuance
+  2. Application creation
+  3. 24-month longitudinal financial profile ingestion
+  4. Containerized ML microservice assessment generation (Model V2, 20 features, drivers, 24M coverage)
+  5. What-if counterfactual scenario simulation with positive score delta (+43 pts) and grounded narrative
+  6. Baseline assessment immutability verification
+  7. Strict 400 validation error on invalid input
+  8. Strict 401 unauthorized request rejection
+
+### Phase 10 — AWS Cloud Deployment (DEFERRED / NOT DEPLOYED)
+- **Status**: Intentionally deferred for this project submission due to strict time constraints. The platform is not running on AWS.
+- **Target Platform (Deployment-Ready)**:
+  - Frontend: AWS Amplify Hosting (via `amplify.yml`)
+  - Backend: Amazon ECS / Fargate (`finalyse-backend`)
+  - ML Microservice: Amazon ECS / Fargate (`finalyse-ml`)
+  - Database: Amazon RDS for PostgreSQL (`db.t4g.micro`, private subnets)
+  - Registry: Amazon ECR
+  - Monitoring: Amazon CloudWatch
+  - Secrets: AWS Secrets Manager (`prod/finalyse/secrets`)
+- **Deliverables Prepared**: All production task definitions, Dockerfiles, build specs (`amplify.yml`), and migration manifests are verified locally and documented in `docs/DEPLOYMENT.md` for future deployment.
+
+---
+
+## Testing Verification Baseline
+
+| Test Suite | Framework | Total Tests | Passed | Failed | Status |
+|---|---|---|---|---|---|
+| Backend Test Suite | Jest + Supertest | 64 | 64 | 0 | **PASS (100%)** |
+| ML Service Test Suite | Pytest | 18 | 18 | 0 | **PASS (100%)** |
+| Frontend Production Build | Vite / React | 1 | 1 | 0 | **PASS (Clean dist)** |
+| Docker Compose Build | Docker OCI | 2 images | 2 | 0 | **PASS** |
+| Containerized E2E Workflow | Node.js Script | 8 steps | 8 | 0 | **PASS (100%)** |
+
+---
+
+## Security & Compliance Audit
+- **Zero Secrets Committed**: `.env`, `.env.local`, and private tokens are excluded via `.gitignore` and `.dockerignore`.
+- **Secret Scanning**: Audited entire codebase for private keys, AWS access keys (`AKIA...`), and Google API keys (`AIzaSy...`). Zero real credentials found.
+- **Local Git Protection**: `Antigravity_Master_Agent_Prompt_Definitive.md` and `AGENTS.md` remain untracked locally and excluded from Git.
+- **Zero Git Commits**: No commits or git pushes were created during this phase. All working tree changes are preserved for manual developer review.

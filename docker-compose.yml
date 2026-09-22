@@ -1,0 +1,97 @@
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL Database Service
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: finalyse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-finalyse_dev}
+    ports:
+      - "${PG_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-finalyse_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finalyse-network
+
+  # ----------------------------------------------------------------------------
+  # Python / FastAPI ML Microservice (Model V2.0.0)
+  # ----------------------------------------------------------------------------
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: finalyse-ml-service
+    restart: unless-stopped
+    environment:
+      PORT: 8000
+      ENVIRONMENT: production
+      ACTIVE_MODEL_VERSION: logistic_regression_v2.0.0
+      FEATURE_SET_VERSION: feature_set_v2
+      ML_SERVICE_API_KEY: ${ML_SERVICE_API_KEY:-dev_internal_ml_service_key_secret}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - finalyse-network
+
+  # ----------------------------------------------------------------------------
+  # Node.js / Express Backend API
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: finalyse-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      API_PREFIX: /api/v1
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-finalyse_dev}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-production_jwt_secret_placeholder_min_32_chars}
+      ML_SERVICE_URL: http://ml-service:8000
+      ML_SERVICE_API_KEY: ${ML_SERVICE_API_KEY:-dev_internal_ml_service_key_secret}
+      LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.1-flash-lite}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      PROMPT_VERSION: risk-explanation-v1
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - finalyse-network
+
+networks:
+  finalyse-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+    driver: local

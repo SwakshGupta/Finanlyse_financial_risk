@@ -4,36 +4,48 @@ The frontend application provides the user interface for applicants and risk ana
 
 ---
 
-## 1. Overview & Core Flows
+## 1. Overview & Core Features
 
-Implemented in **Phase 6** using React, the frontend encompasses:
-- **Authentication**: Registration and login screens for loan officers and applicants.
-- **Application Intake**: Multi-step wizard collecting consented applicant details and alternative financial information.
-- **Financial Ingestion UI**: Form input and statement file upload.
+Built with **React 18** and **Vite** with a custom Vanilla CSS design system (dark obsidian canvas, glassmorphic surfaces, HSL color tokens):
+- **Role-Aware Authentication**: Dual-mode login and registration (`APPLICANT` vs `ANALYST`) with 1-click demo persona quick-fills.
+- **Application Intake Wizard**: 3-step intake collecting applicant details, fair-lending consent, and financial data via 1-click synthetic presets, manual inputs, or statement CSV uploads.
 - **Risk Assessment Dashboard**:
-  - Alternative Risk Score visualization (300–850 gauge)
-  - Estimated Default Probability and Risk Band indicator
-  - Model-derived Top Risk Drivers (positive and negative contributors)
-  - Data Coverage and Completeness score
-- **Explainability View**: Plain-language grounded explanations synthesized by Gemini via the backend.
-- **What-if Scenario Playground**: Interactive sliders and scenario inputs to preview how financial changes (e.g. higher EMI, increased savings) impact risk without altering historical records.
+  - Alternative Risk Score SVG circular arc gauge (0–100 scaled)
+  - Estimated Default Probability and Risk Band pills (`LOW`, `MODERATE`, `HIGH`)
+  - Feature-level positive/negative risk drivers with signed contribution bars
+  - 24-Month Temporal Inflow trajectory chart (`IncomeTrendCard.jsx`)
+  - Longitudinal behavioral indicators (3M momentum, deficit months, liquidity floor)
+  - Grounded AI explanation card with live regeneration controls
+- **Interactive What-If Scenario Lab**: Real-time counterfactual sliders for income, expenses, debt EMI, and cash buffers to preview score adjustments without altering immutable baseline records.
+- **Conversational Credit Advisor**: Role-aware credit assistant drawer adapting its tone to Underwriter or Applicant perspectives.
 
 ---
 
-## 2. Directory Structure (Planned)
+## 2. Local Development
 
-```text
-frontend/
-├── public/                  # Static assets and index.html
-├── src/
-│   ├── assets/              # Icons, logos, styles
-│   ├── components/          # Reusable UI components (buttons, score gauges, modals)
-│   ├── context/             # Auth and application state providers
-│   ├── hooks/               # Custom React hooks (useAuth, useAssessment)
-│   ├── pages/               # Login, ApplicationForm, Dashboard, WhatIf
-│   ├── services/            # API client layer communicating with Express backend
-│   ├── App.jsx              # Application router
-│   └── main.jsx             # React entrypoint
-├── package.json
-└── README.md
+```bash
+cd frontend
+npm install
+npm run dev
 ```
+Open `http://localhost:3000`. The Vite server automatically proxies `/api` and `/health` requests to the backend on port 4000.
+
+### Production Build Verification
+```bash
+npm run build
+```
+Generates production-optimized static bundle in `frontend/dist/`.
+
+---
+
+## 3. AWS Amplify Hosting Deployment
+
+The frontend is deployed to **AWS Amplify Hosting** via repository build specification `amplify.yml`:
+- **Build Commands**:
+  - `preBuild`: `npm --prefix frontend ci`
+  - `build`: `npm --prefix frontend run build`
+  - `artifacts.baseDirectory`: `frontend/dist`
+- **Environment Variables**:
+  - `VITE_API_BASE_URL`: Browser-safe public URL of the backend Application Load Balancer (e.g. `https://api.finalyse.yourdomain.com`).
+- **Security Check**:
+  - **NEVER** expose `GEMINI_API_KEY`, `JWT_SECRET`, database passwords, or AWS credentials to the frontend environment or Vite build arguments. Only browser-safe variables starting with `VITE_` are permitted.
