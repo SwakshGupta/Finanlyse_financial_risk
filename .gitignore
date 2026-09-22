@@ -23,6 +23,10 @@
 # Agent guidelines (do not commit)
 AGENTS.md
 
+# Local-only internal instructions
+Antigravity_Master_Agent_Prompt_Definitive.md
+
+
 
 # Node.js
 node_modules/
